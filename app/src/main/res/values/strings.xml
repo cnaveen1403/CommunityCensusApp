@@ -1,0 +1,44 @@
+<resources>
+    <string name="app_name">Community Census</string>
+    <string name="title_activity_home_screen">HomeScreenActivity</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="login_digits_label">Login With Mobile</string>
+    <string name="title_activity_home">HomeActivity</string>
+    <string name="txt_registered_members">Registerd Members</string>
+    <string name="txt_family_members">Family Members</string>
+    <string name="txt_enrolled_pincode">Enrolled By Pincode</string>
+    <string name="txt_supervisor">Supervisor</string>
+    <string name="lbl_dont_have_account">DON\'T HAVE ACCOUNT?</string>
+    <string name="lbl_sign_up">I\'m New</string>
+    <string name="lbl_add_member">Add Member</string>
+    <string name="lbl_add">Add</string>
+    <string name="lbl_supervisor">Supervisor</string>
+    <string name="title_activity_edit_profile">Edit Profile</string>
+    <string name="title_activity_add_supervisor">Add Supervisor</string>
+    <string name="title_activity_add_member">AddMember</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_activity_list_family_head">ListFamilyHead</string>
+    <string name="lbl_member">Member</string>
+    <string name="txt_family_head">Family Head</string>
+    <string name="txt_reports">Reports</string>
+    <string name="help">Help</string>
+    <string name="string_help_text">The permission is missing.\n\nTo grant this permission click on Settings, then Permissions and turn the permission on.\n\nThen click back twice to return to the app</string>
+    <string name="quit">Close</string>
+    <string name="settings">Settings</string>
+    <string name="txt_select_family_head">Select Family Head</string>
+    <string name="txt_first_name">First Name</string>
+    <string name="txt_last_name">Last Name</string>
+    <string name="txtGender">Gender</string>
+    <string name="txt_date_of_birth">Date Of Birth</string>
+    <string name="txt_mobile_no">Phone Number</string>
+    <string name="txt_email">Email ID</string>
+    <string name="txt_address">Address</string>
+    <string name="txt_zipcode">Zipcode</string>
+    <string name="no_network">Check your internet connection and try again.</string>
+</resources>

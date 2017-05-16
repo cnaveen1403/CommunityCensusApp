@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#03a9f5</color>
+    <color name="colorPrimaryDark">#007ac2</color>
+    <color name="colorAccent">#000000</color>
+    <color name="white">#ffffff</color>
+    <color name="lightWhite">#FFF4F3F3</color>
+    <color name="buttonBackground">#35b6f1</color>
+
+    <!--<color name="sunshine_light_blue">#ff64c2f4</color>
+    <color name="sunshine_blue">#ff1ca8f4</color>
+    <color name="sunshine_dark_blue">#0288D1</color>-->
+
+    <color name="paytm_color">#012b72</color>
+</resources>
