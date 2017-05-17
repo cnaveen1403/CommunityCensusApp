@@ -8,4 +8,6 @@ public class CensusConstants {
     public static final String LOGIN_URL = "login";
 
     public static String loginType = "login_type";
+
+    public static final String STATUS = "status";
 }

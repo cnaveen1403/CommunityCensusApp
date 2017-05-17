@@ -111,16 +111,11 @@ public class LoginSignupActivity extends Activity {
         } else {
             Toast.makeText(mContext, getString(R.string.no_network), Toast.LENGTH_LONG).show();
         }
-
-        finishAffinity();
-        Intent intent = new Intent(LoginSignupActivity.this, HomeActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        startActivity(intent);
     }
 
     private class LoginTask extends AsyncTask<String, Void, String> {
         String phoneNum;
-        Dialog dialog;
+//        Dialog dialog;
 
         @Override
         protected void onPreExecute() {
@@ -138,48 +133,37 @@ public class LoginSignupActivity extends Activity {
 
         @Override
         protected void onPostExecute(String result) {
-            dialog.dismiss();
+//            dialog.dismiss();
             try {
                 JSONObject jsonObject = new JSONObject(result);
 Log.d(LOG_TAG, "result >>> " + result);
-                /*String msg = jsonObject.getString("msg");
 
-                if (msg.equals("Error")) {
-                    String response = jsonObject.getString("response");
+                String status = jsonObject.getString(CensusConstants.STATUS);
 
-                    if (response.equalsIgnoreCase(BureauConstants.INVALID_USERID)) {
-                        Util.invalidateUserID(Login.this, Login.this);
-                    } else {
-                        final Dialog dialog = new Dialog(Login.this);
-                        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-                        dialog.setContentView(R.layout.simple_alert);
-                        ((TextView) dialog.findViewById(R.id.dialogTitleTV)).setText(msg);
-                        ((TextView) dialog.findViewById(R.id.dialogMessage)).setText(response);
-                        // set the custom dialog components - text, image and button
-                        TextView text = (TextView) dialog.findViewById(R.id.cancelTV);
-                        text.setText("OK");
+                String response = jsonObject.getString("response");
+                if (status.equals("error")) {
+                    final Dialog dialog = new Dialog(LoginSignupActivity.this);
+                    dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                    dialog.setContentView(R.layout.simple_alert);
+                    ((TextView) dialog.findViewById(R.id.dialogTitleTV)).setText("Error");
+                    ((TextView) dialog.findViewById(R.id.dialogMessage)).setText(response);
+                    // set the custom dialog components - text, image and button
+                    TextView text = (TextView) dialog.findViewById(R.id.cancelTV);
+                    text.setText("OK");
 
-                        text.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                dialog.dismiss();
-                            }
-                        });
-                        dialog.show();
-                    }
+                    text.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            dialog.dismiss();
+                        }
+                    });
+                    dialog.show();
                 } else {
-                    String profilestatus = jsonObject.getString(BureauConstants.profileStatus);
-                    String userId = jsonObject.getString(BureauConstants.userid);
-                    AppData.saveString(Login.this, BureauConstants.userid, userId);
-                    AppData.saveString(Login.this, BureauConstants.phoneNumber, phoneNum);
-                    AppData.saveString(Login.this, BureauConstants.loginType, login_type);
-                    AppData.saveString(Login.this, BureauConstants.loginValue, login_value);
-                    AppData.saveString(Login.this, BureauConstants.profileStatus, profilestatus);
-                    AppData.saveString(Login.this, BureauConstants.referralCode, jsonObject.getString(BureauConstants.referralCode));
-                    AppData.saveString(Login.this, BureauConstants.referralCodeApplied, jsonObject.getString(BureauConstants.referralCodeApplied));
-
-                    afterSuccessfulLogin();
-                }*/
+                    finishAffinity();
+                    Intent intent = new Intent(LoginSignupActivity.this, HomeActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    startActivity(intent);
+                }
             } catch (JSONException jsonException) {
                 jsonException.printStackTrace();
             }
