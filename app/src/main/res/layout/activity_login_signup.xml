@@ -3,64 +3,200 @@
     android:layout_height="match_parent"
     android:background="@drawable/login_bg">
 
-    <LinearLayout
+    <ImageView
+        android:id="@+id/imageView2"
+        android:layout_width="110dp"
+        android:layout_height="110dp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="80dp"
+        android:contentDescription="@string/app_name"
+        android:src="@drawable/logo" />
+
+    <TextView
+        android:id="@+id/tv_app_name"
+        android:layout_width="match_parent"
+        android:layout_height="35dp"
+        android:layout_below="@+id/imageView2"
+        android:layout_marginBottom="10dp"
+        android:gravity="center"
+        android:lines="1"
+        android:maxLines="1"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingStart="10dp"
+        android:text="@string/app_name"
+        android:textColor="@color/white"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <RelativeLayout
+        android:id="@+id/rl_member_login"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="vertical">
-
-        <ImageView
-            android:id="@+id/imageView2"
-            android:layout_width="wrap_content"
-            android:layout_height="150dp"
-            android:layout_gravity="center_horizontal"
-            android:layout_margin="10dp"
-            android:contentDescription="@string/app_name"
-            android:src="@drawable/logo" />
+        android:layout_below="@id/tv_app_name"
+        android:orientation="vertical"
+        android:layout_marginTop="16dp"
+        android:visibility="visible">
 
         <TextView
+            android:id="@+id/tv_member_supervisor"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:layout_marginBottom="20dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
             android:gravity="center"
-            android:lines="1"
-            android:maxLines="1"
-            android:paddingLeft="10dp"
-            android:paddingRight="10dp"
-            android:paddingStart="10dp"
-            android:text="@string/app_name"
+            android:text="You are logging in as Supervisor"
             android:textColor="@color/white"
-            android:textSize="24sp"
-            android:textStyle="bold" />
+            android:layout_alignParentTop="true"
+            android:textSize="12sp" />
 
         <com.digits.sdk.android.DigitsAuthButton
             android:id="@+id/auth_button_login"
             android:layout_width="200dp"
             android:layout_height="40dp"
+            android:layout_gravity="center"
             android:elevation="2dp"
             android:textAlignment="center"
-            android:textAllCaps="false" />
-    </LinearLayout>
+            android:textAllCaps="false"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/tv_member_supervisor"/>
+
+        <TextView
+            android:id="@+id/tv_member_login"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:theme="@style/SEND"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:gravity="center"
+            android:text="@string/lbl_member_login_text"
+            android:textColor="@color/paytm_color"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:layout_above="@+id/ll_or"
+            android:layout_centerHorizontal="true"/>
+        <LinearLayout
+            android:id="@+id/ll_or"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:weightSum="1"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="4dp"
+            android:layout_marginLeft="4dp"
+            android:layout_marginRight="4dp"
+            android:layout_above="@+id/tv_member_login_hint">
+        <View
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:layout_weight="0.44"
+            android:background="@color/white" />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.12"
+            android:text="OR"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:gravity="center"/>
+            <View
+                android:layout_width="0dp"
+                android:layout_height="2dp"
+                android:layout_weight="0.44"
+                android:background="@color/white" />
+        </LinearLayout>
+        <TextView
+            android:id="@+id/tv_member_login_hint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_centerHorizontal="true"
+            android:textStyle="bold"
+            android:theme="@style/SEND"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:textAllCaps="false"
+            android:text="@string/lbl_admin_login"
+            android:layout_alignParentBottom="true" />
+
+    </RelativeLayout>
 
     <RelativeLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentRight="true"
-        android:layout_marginBottom="8dp">
+        android:id="@+id/rl_admin_login"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/tv_app_name"
+        android:layout_margin="16dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tv_admin_login"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:gravity="center"
+            android:text="You are logging in as Admin"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:layout_alignParentTop="true"/>
+
+        <EditText
+            android:id="@+id/et_username"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/white"
+            android:hint="username"
+            android:maxLines="1"
+            android:inputType="text"
+            android:imeOptions="actionNext"
+            android:paddingLeft="10dp"
+            android:textColorHint="@color/white"
+            android:layout_below="@+id/tv_admin_login"/>
+
+        <EditText
+            android:id="@+id/et_password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/white"
+            android:hint="password"
+            android:drawablePadding="10dp"
+            android:inputType="textPassword"
+            android:paddingLeft="10dp"
+            android:maxLines="1"
+            android:textColorHint="@color/white"
+            android:layout_below="@+id/et_username"/>
 
         <Button
-            android:id="@+id/sign_up_btn"
-            android:layout_width="150dp"
-            android:layout_height="50dp"
-            android:padding="4dp"
+            android:id="@+id/btn_login"
+            android:layout_width="120dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:theme="@style/SEND"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:background="@color/colorPrimary"
+            android:elevation="8dp"
+            android:gravity="center"
+            android:text="Login"
+            android:textColor="@color/white"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@id/et_password"/>
+        <TextView
+            android:id="@+id/tv_admin_login_hint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/lbl_member_login"
+            android:textColor="@color/white"
+            android:textSize="12sp"
             android:layout_alignParentBottom="true"
-            android:background="@drawable/signup_btn_bg"
-            android:text="@string/lbl_sign_up"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:elevation="2dp"
-            android:textAlignment="center"/>
+            android:layout_alignParentStart="true"/>
     </RelativeLayout>
+
 </RelativeLayout>

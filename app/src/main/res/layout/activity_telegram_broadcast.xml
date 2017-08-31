@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.zolipe.communitycensus.SupervisorsList">
+
+    <FrameLayout
+        android:id="@+id/fl_background"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg"
+        android:layout_above="@+id/ll_message_area"
+        tools:context="com.zolipe.communitycensus.TelegramBroadcast">
+        <include layout="@layout/toolbar" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="?attr/actionBarSize">
+
+            <io.codetail.widget.RevealFrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <include layout="@layout/media_attach_menu" />
+            </io.codetail.widget.RevealFrameLayout>
+        </FrameLayout>
+    </FrameLayout>
+    <LinearLayout
+        android:id="@+id/ll_message_area"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:background="#91f1f1f1"
+        android:paddingBottom="2dp"
+        android:orientation="vertical">
+        <CheckBox
+            android:id="@+id/chk_is_group_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:text="Is this a Group Message ?"/>
+        <LinearLayout
+            android:id="@+id/form"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:background="#91f1f1f1"
+            android:orientation="horizontal">
+            <EditText
+                android:id="@+id/et_input"
+                android:layout_width="252dp"
+                android:layout_height="wrap_content"
+                android:hint="your message here..."
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentLeft="true"
+                android:layout_alignTop="@+id/button1"
+                android:layout_toLeftOf="@+id/sendMessageButton"
+                android:layout_weight="0.72"
+                android:ems="10"
+                android:maxHeight="80dp" />
+
+            <ImageButton
+                android:id="@+id/sendMessageButton"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginRight="8dp"
+                android:layout_gravity="center"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentRight="true"
+                android:background="@drawable/ic_send" />
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

@@ -1,0 +1,266 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:scatter="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:weightSum="2"
+    tools:context="com.zolipe.communitycensus.fragments.ReportsFragment">
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <FrameLayout
+            android:id="@+id/fl_top"
+            android:layout_width="match_parent"
+            android:layout_height="270dp"
+            android:layout_alignParentTop="true">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:id="@+id/tv_summary"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_alignParentTop="true"
+                    android:layout_centerHorizontal="true"
+                    android:background="#FFEAE6E6"
+                    android:gravity="center|center_vertical"
+                    android:text="Summary"
+                    android:textColor="@color/colorAccent"
+                    android:textSize="20sp" />
+
+                <RelativeLayout
+                    android:id="@+id/ll_summary_type"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/tv_summary">
+
+                    <LinearLayout
+                        android:id="@+id/ll_search"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:orientation="horizontal"
+                        android:weightSum="2"
+                        android:background="@drawable/grey_border"
+                        android:padding="4dp">
+
+                        <Spinner
+                            android:id="@+id/spinner_summary"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1" />
+
+                        <EditText
+                            android:id="@+id/et_search"
+                            android:layout_width="0dp"
+                            android:layout_height="32dp"
+                            android:layout_gravity="center"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_search"
+                            android:drawableLeft="@android:drawable/ic_menu_search"
+                            android:drawablePadding="4dp"
+                            android:hint="Zipcode"
+                            android:imeOptions="actionSearch"
+                            android:inputType="text"
+                            android:maxLength="6"
+                            android:textSize="12sp"
+                            android:padding="8dp" />
+                    </LinearLayout>
+
+                    <com.intrusoft.scatter.PieChart
+                        android:id="@+id/pie_total"
+                        android:layout_width="160dp"
+                        android:layout_height="160dp"
+                        android:layout_below="@+id/ll_search"
+                        android:layout_margin="8dp"
+                        scatter:aboutChart=""
+                        scatter:aboutTextColor="@color/paytm_color"
+                        scatter:aboutTextSize="40"
+                        scatter:centerColor="@color/white"
+                        scatter:chartColor="@color/paytm_color"
+                        scatter:equalPartition="false"
+                        scatter:textColor="@color/white"
+                        scatter:textSize="30" />
+                    <LinearLayout
+                        android:id="@+id/ll_indicator"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_toRightOf="@+id/pie_total"
+                        android:layout_below="@+id/ll_search"
+                        android:layout_marginLeft="8dp"
+                        android:layout_marginTop="8dp"
+                        android:visibility="gone">
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="8dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Total : "
+                                android:textSize="12sp"
+                                android:textColor="@color/colorAccent"/>
+                            <TextView
+                                android:id="@+id/tv_total"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text=""
+                                android:textStyle="italic"
+                                android:textSize="12sp"
+                                android:textColor="@color/error_color"/>
+                        </LinearLayout>
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="8dp">
+                            <Button
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:background="#012b72"/>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Male"
+                                android:layout_marginLeft="8dp"/>
+                        </LinearLayout>
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="8dp">
+                            <Button
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:background="#03a9f5"/>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Female"
+                                android:layout_marginLeft="8dp"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                </RelativeLayout>
+
+                <LinearLayout
+                    android:id="@+id/ll_no_data"
+                    android:layout_width="match_parent"
+                    android:layout_height="fill_parent"
+                    android:layout_marginTop="80dp"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tv_error"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="No data available"
+                        android:textSize="14sp" />
+
+                    <Button
+                        android:id="@+id/btn_retry"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Retry" />
+                </LinearLayout>
+            </RelativeLayout>
+        </FrameLayout>
+    </RelativeLayout>
+
+    <View
+        android:id="@+id/view_line"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/paytm_color" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_monthly_summary"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="#FFEAE6E6"
+            android:gravity="center"
+            android:text="Monthly Summary"
+            android:paddingLeft="10dp"
+            android:textColor="@color/colorAccent"
+            android:textSize="20sp" />
+
+        <org.eazegraph.lib.charts.ValueLineChart
+            android:id="@+id/cubiclinechart"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginTop="40dp"
+            android:visibility="visible"
+            app:egCurveSmoothness="0.6"
+            app:egIndicatorLineColor="#FE6DA8"
+            app:egLegendHeight="30dp"
+            app:egShowStandardValue="true"
+            app:egUseCubic="true"
+            app:egUseOverlapFill="true" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@+id/tv_monthly_summary"
+            android:layout_alignParentRight="true"
+            android:gravity="end"
+            android:background="@color/error_color"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginTop="8dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Month : "
+                android:layout_gravity="center"
+                android:textColor="@color/white"
+                android:paddingLeft="8dp"
+                android:textSize="16sp"/>
+            <Spinner
+                android:id="@+id/spinner_months"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:backgroundTint="@color/white"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ll_no_data_linechart"
+            android:layout_width="match_parent"
+            android:layout_height="fill_parent"
+            android:layout_centerVertical="true"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="visible">
+
+            <TextView
+                android:id="@+id/tv_error_linechart"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="No data available"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/btn_retry_linechart"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Retry" />
+        </LinearLayout>
+    </RelativeLayout>
+</LinearLayout>

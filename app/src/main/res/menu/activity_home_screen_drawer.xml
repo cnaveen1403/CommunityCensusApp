@@ -1,40 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <group android:checkableBehavior="single">
-        <item
-            android:id="@+id/nav_reports"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="Reports" />
-        <item
-            android:id="@+id/nav_broadcast"
-            android:icon="@drawable/ic_menu_gallery"
-            android:title="Broadcast" />
-        <item
-            android:id="@+id/nav_about_us"
-            android:icon="@drawable/ic_menu_slideshow"
-            android:title="About Us" />
-        <item
-            android:id="@+id/nav_settings"
-            android:icon="@drawable/ic_menu_manage"
-            android:title="Settings" />
-        <item
-            android:id="@+id/nav_logout"
-            android:icon="@drawable/ic_menu_manage"
-            android:title="Logout" />
-    </group>
-
-    <item android:title="Communicate">
+    <item android:title="Supervisor">
         <menu>
             <item
-                android:id="@+id/nav_share"
-                android:icon="@drawable/ic_menu_share"
-                android:title="Share" />
-            <item
-                android:id="@+id/nav_send"
-                android:icon="@drawable/ic_menu_send"
-                android:title="Send" />
+                android:id="@+id/nav_add_supervisor"
+                android:icon="@drawable/ic_supervisor_list"
+                android:title="Add Supervisor" />
         </menu>
     </item>
+    <item android:title="Broadcast">
+        <menu>
+            <item
+                android:id="@+id/nav_send_sms"
+                android:icon="@drawable/ic_sms"
+                android:title="SMS" />
+            <item
+                android:id="@+id/nav_send_telegram"
+                android:icon="@drawable/ic_send"
+                android:title="Telegram" />
+            <item
+                android:id="@+id/nav_send_email"
+                android:icon="@drawable/ic_email"
+                android:title="Email" />
+        </menu>
+    </item>
+    <group android:checkableBehavior="single">
+        <!--<item
+            android:id="@+id/nav_settings"
+            android:icon="@drawable/ic_settings"
+            android:title="Settings" />-->
 
+    </group>
+
+    <item android:title="Other">
+        <menu>
+            <item
+                android:id="@+id/nav_about_us"
+                android:icon="@drawable/ic_info"
+                android:title="About Us" />
+            <item
+                android:id="@+id/nav_privacy_policy"
+                android:icon="@drawable/ic_privacy_policy_new"
+                android:title="Privacy and Policy" />
+            <item
+                android:id="@+id/nav_sign_out"
+                android:icon="@drawable/ic_signout"
+                android:title="Sign out" />
+        </menu>
+    </item>
 </menu>

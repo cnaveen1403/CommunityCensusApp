@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.zolipe.communitycensus"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.zolipe.communitycensus">
+
+    <uses-sdk tools:overrideLibrary="gr.escsoft.michaelprimez.searchablespinner" />
 
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -12,32 +14,51 @@
     <!-- GallerySender -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-sdk tools:overrideLibrary="gr.escsoft.michaelprimez.searchablespinner" />
+
+    <!--
+         The ACCESS_COARSE/FINE_LOCATION permissions are not required to use
+         Google Maps Android API v2, but you must specify either coarse or fine
+         location permissions for the 'MyLocation' functionality. 
+    -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
-        android:name=".app.CensusApp"
         android:allowBackup="true"
-        android:icon="@drawable/login_bg"
+        android:icon="@drawable/app_icon"
         android:label="@string/app_name"
+        android:largeHeap="true"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/AppTheme"
+        tools:replace="android:allowBackup">
         <activity
             android:name=".LoginSignupActivity"
             android:screenOrientation="portrait"
             android:theme="@android:style/Theme.Holo.NoActionBar.Fullscreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
             android:name=".SignUpActivity"
+            android:parentActivityName=".LoginSignupActivity"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="stateAlwaysHidden" />
+            android:theme="@style/AppTheme.NoActionBar"
+            android:windowSoftInputMode="stateAlwaysHidden">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.zolipe.communitycensus.LoginSignupActivity" />
+        </activity>
         <activity
             android:name=".HomeActivity"
             android:label="@string/title_activity_home_screen"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.zolipe.communitycensus.HomeActivity" />
+        </activity>
 
         <meta-data
             android:name="io.fabric.ApiKey"
@@ -47,7 +68,9 @@
             android:name=".EditProfile"
             android:label="@string/title_activity_edit_profile"
             android:parentActivityName=".HomeActivity"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:windowSoftInputMode="stateAlwaysHidden">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.zolipe.communitycensus.HomeActivity" />
@@ -56,7 +79,9 @@
             android:name=".AddSupervisor"
             android:label="@string/title_activity_add_supervisor"
             android:parentActivityName=".HomeActivity"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:windowSoftInputMode="stateAlwaysHidden">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.zolipe.communitycensus.HomeActivity" />
@@ -64,18 +89,10 @@
         <activity
             android:name=".AddMember"
             android:label="@string/title_activity_add_member"
-            android:windowSoftInputMode="stateAlwaysHidden"
             android:parentActivityName=".HomeActivity"
-            android:theme="@style/AppTheme.NoActionBar">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.zolipe.communitycensus.HomeActivity" />
-        </activity>
-        <activity
-            android:name=".ListFamilyHead"
-            android:label="@string/title_activity_list_family_head"
-            android:parentActivityName=".HomeActivity"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:windowSoftInputMode="stateAlwaysHidden">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.zolipe.communitycensus.HomeActivity" />
@@ -84,6 +101,64 @@
             android:name=".permissions.PermissionsActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="stateAlwaysHidden" />
+        <activity
+            android:name=".FamilyMembers"
+            android:label="@string/title_activity_family_members"
+            android:parentActivityName=".HomeActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.zolipe.communitycensus.HomeActivity" />
+        </activity>
+        <activity
+            android:name=".FamilyDetailsActivity"
+            android:label="Family Details"
+            android:parentActivityName=".FamilyMembers"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.zolipe.communitycensus.FamilyMembers" />
+        </activity>
+        <activity
+            android:name=".AddFamilyMember"
+            android:label="@string/title_activity_add_family_member"
+            android:parentActivityName=".FamilyDetailsActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:windowSoftInputMode="stateAlwaysHidden">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.zolipe.communitycensus.FamilyDetailsActivity" />
+        </activity>
+        <activity
+            android:name=".TelegramBroadcast"
+            android:label="@string/title_activity_telegram_broadcast"
+            android:parentActivityName=".HomeActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.zolipe.communitycensus.HomeActivity" />
+        </activity>
+        <activity
+            android:name=".SupervisorDetail"
+            android:label="@string/title_activity_supervisor_detail"
+            android:parentActivityName=".HomeActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.zolipe.communitycensus.HomeActivity" />
+        </activity>
+        <activity
+            android:name=".ViewMember"
+            android:label="@string/title_activity_view_member"
+            android:parentActivityName=".FamilyDetailsActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.zolipe.communitycensus.FamilyDetailsActivity" />
+        </activity>
     </application>
 
 </manifest>

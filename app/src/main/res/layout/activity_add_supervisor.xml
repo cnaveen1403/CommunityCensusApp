@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -7,27 +7,237 @@
     tools:context="com.zolipe.communitycensus.AddSupervisor">
 
     <android.support.design.widget.AppBarLayout
+        android:id="@+id/app_bar_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/AppTheme.AppBarOverlay">
+        android:fitsSystemWindows="true"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
         <android.support.v7.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
-            app:popupTheme="@style/AppTheme.PopupOverlay">
-        <ImageView
-            android:id="@+id/iv_toolbar_done"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:layout_gravity="end"
-            android:layout_marginRight="8dp"
-            android:src="@drawable/ic_done_white" />
-        </android.support.v7.widget.Toolbar>
-
+            android:title="@string/lbl_add_supervisor"
+            app:layout_collapseMode="pin"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
     </android.support.design.widget.AppBarLayout>
 
-    <include layout="@layout/content_add_supervisor" />
+    <ScrollView
+        android:id="@+id/scroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/app_bar_layout"
+        android:layout_above="@id/btn_add_member"
+        android:layout_marginBottom="60dp"
+        android:clipToPadding="false"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-</android.support.design.widget.CoordinatorLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_margin="8dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textStyle="italic"
+                android:textColor="@color/colorAccent"
+                android:text="@string/lbl_all_fields"
+                android:gravity="center"/>
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/ivAddProfileImage"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:scaleType="centerCrop"
+                app:civ_border_width="4dp"
+                app:civ_border_color="@color/colorPrimary"
+                android:src="@drawable/ic_add_photo" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp"
+                android:orientation="vertical">
+
+                <EditText
+                    android:id="@+id/et_first_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawableLeft="@drawable/ic_user"
+                    android:drawableStart="@drawable/ic_user"
+                    android:hint="@string/txt_first_name"
+                    android:inputType="textCapSentences"
+                    android:maxLines="1"
+                    android:textColorHint="@color/hint_color" />
+
+                <EditText
+                    android:id="@+id/et_last_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawableLeft="@drawable/ic_user"
+                    android:drawableStart="@drawable/ic_user"
+                    android:hint="@string/txt_last_name"
+                    android:inputType="textCapSentences"
+                    android:maxLines="1"
+                    android:textColorHint="@color/hint_color" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_marginLeft="8dp"
+                    android:layout_marginRight="8dp"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvGender"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/txtGender"
+                        android:textColor="@color/hint_color"
+                        android:textSize="17sp" />
+
+                    <ImageView
+                        android:id="@+id/ivFemale"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:layout_gravity="center"
+                        android:layout_marginLeft="@dimen/activity_horizontal_margin"
+                        android:layout_marginStart="@dimen/activity_horizontal_margin"
+                        android:src="@drawable/ic_female_grey" />
+
+                    <ToggleButton
+                        android:id="@+id/toggleButton_gender"
+                        android:layout_width="90dp"
+                        android:layout_height="40dp"
+                        android:layout_marginLeft="@dimen/activity_horizontal_margin"
+                        android:layout_marginStart="@dimen/activity_horizontal_margin"
+                        android:background="@drawable/toggle_gender_selector"
+                        android:checked="false"
+                        android:text=""
+                        android:textOff=""
+                        android:textOn="" />
+
+                    <ImageView
+                        android:id="@+id/ivMale"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:layout_gravity="center"
+                        android:layout_marginLeft="@dimen/activity_horizontal_margin"
+                        android:layout_marginStart="@dimen/activity_horizontal_margin"
+                        android:src="@drawable/ic_male_blue" />
+                </LinearLayout>
+
+                <EditText
+                    android:id="@+id/et_aadhaar_signup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawableLeft="@drawable/ic_aadhar"
+                    android:drawableStart="@drawable/ic_aadhar"
+                    android:hint="@string/txt_aadhaar"
+                    android:inputType="number"
+                    android:maxLength="12"
+                    android:maxLines="1"
+                    android:textColorHint="@color/hint_color" />
+
+                <EditText
+                    android:id="@+id/et_phone_no"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawableLeft="@drawable/ic_mobile"
+                    android:drawableStart="@drawable/ic_mobile"
+                    android:hint="@string/txt_mobile_no"
+                    android:inputType="number"
+                    android:maxLength="10"
+                    android:maxLines="1"
+                    android:textColorHint="@color/hint_color" />
+
+                <EditText
+                    android:id="@+id/et_supervisor_dob"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawableLeft="@drawable/ic_calendar"
+                    android:drawableStart="@drawable/ic_calendar"
+                    android:hint="@string/txt_date_of_birth"
+                    android:inputType="date"
+                    android:maxLines="1"
+                    android:imeOptions="actionNext"
+                    android:nextFocusDown="@id/et_email"
+                    android:textColorHint="@color/hint_color" />
+
+                <EditText
+                    android:id="@+id/et_email"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawableLeft="@drawable/ic_mail"
+                    android:drawableStart="@drawable/ic_mail"
+                    android:hint="@string/txt_email"
+                    android:inputType="textEmailAddress"
+                    android:maxLines="1"
+                    android:textColorHint="@color/hint_color" />
+
+                <EditText
+                    android:id="@+id/et_address"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawableLeft="@drawable/ic_address"
+                    android:drawableStart="@drawable/ic_address"
+                    android:hint="@string/txt_address"
+                    android:maxLines="1"
+                    android:inputType="textAutoComplete"
+                    android:imeOptions="actionNext"
+                    android:textColorHint="@color/hint_color" />
+
+                <fr.ganfra.materialspinner.MaterialSpinner
+                    android:id="@+id/spinner_state"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    app:paddingStart="10dp"
+                    app:ms_enableErrorLabel="false"
+                    app:ms_enableFloatingLabel="false"
+                    app:ms_hint="Please select State"
+                    app:ms_hintColor="@color/hint_color" />
+
+                <fr.ganfra.materialspinner.MaterialSpinner
+                    android:id="@+id/spinner_city"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    app:ms_enableErrorLabel="false"
+                    app:ms_enableFloatingLabel="false"
+                    app:ms_hint="Please select City"
+                    app:ms_hintColor="@color/hint_color" />
+
+                <EditText
+                    android:id="@+id/et_zipcode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawableLeft="@drawable/ic_zipcode"
+                    android:drawableStart="@drawable/ic_zipcode"
+                    android:hint="@string/txt_zipcode"
+                    android:inputType="number"
+                    android:maxLength="6"
+                    android:maxLines="1"
+                    android:textColorHint="@color/hint_color" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <Button
+        android:id="@+id/btn_add_supervisor"
+        android:layout_width="120dp"
+        android:layout_height="45dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:background="@drawable/blank_button"
+        android:text="@string/lbl_save"
+        android:textColor="@color/white" />
+</RelativeLayout>

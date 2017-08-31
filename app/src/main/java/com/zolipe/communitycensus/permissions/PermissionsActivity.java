@@ -10,6 +10,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 
 import com.zolipe.communitycensus.R;
 
@@ -17,13 +18,12 @@ public class PermissionsActivity extends AppCompatActivity {
 
     public static final int PERMISSIONS_GRANTED = 0;
     public static final int PERMISSIONS_DENIED = 1;
-
     private static final int PERMISSION_REQUEST_CODE = 0;
     private static final String EXTRA_PERMISSIONS = "com.zolipe.communitycensus.EXTRA_PERMISSIONS";
     private static final String PACKAGE_URL_SCHEME = "package:";
-
     private PermissionsChecker checker;
     private boolean requiresCheck;
+    private String TAG = PermissionsActivity.class.getSimpleName();
 
     public static void startActivityForResult(Activity activity, int requestCode, String... permissions) {
         Intent intent = new Intent(activity, PermissionsActivity.class);

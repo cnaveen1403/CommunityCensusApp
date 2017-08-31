@@ -9,9 +9,11 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -56,7 +58,51 @@ public class ConnectToServer {
         return json;
     }
 
-    public String getDataFromUrl(String url) {
+
+    public JSONObject deleteDataFromUrl(String url)
+    {
+        JSONObject jsonobj = new JSONObject();
+        try
+        {
+            DefaultHttpClient httpClient=new DefaultHttpClient();
+            HttpDelete httpDelete = new HttpDelete(url);
+            HttpResponse httpResponse=httpClient.execute(httpDelete);
+            HttpEntity httpEntity=httpResponse.getEntity();
+            is=httpEntity.getContent();
+        }
+        catch (Exception e) {
+            // TODO: handle exception
+        }
+        //read data from url
+        try
+        {
+            BufferedReader reader=new BufferedReader(new InputStreamReader(is,"iso-8859-1"),8);
+            StringBuilder sb=new StringBuilder();
+            String line=null;
+            while((line=reader.readLine())!=null)
+            {
+                sb.append(line+"\n");
+            }
+            is.close();
+            json=sb.toString();
+
+        }
+        catch (Exception e) {
+            // TODO: handle exception
+        }
+        //adding to JSONObject
+        try{
+            jsonobj=new JSONObject(json);
+        }
+        catch (Exception e) {
+            // TODO: handle exception
+            Log.e("PMC", "WEb call error deleteDataFromUrl" + e.getLocalizedMessage());
+
+        }
+        return jsonobj;
+    }
+
+    public String getDataFromUrlGETMethod (String url) {
         try {
             DefaultHttpClient httpClient = new DefaultHttpClient();
 

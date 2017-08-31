@@ -1,0 +1,58 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.zolipe.communitycensus.fragments.SupervisorFragment">
+
+    <RelativeLayout
+        android:id="@+id/rl_data"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <EditText
+            android:id="@+id/et_search"
+            android:layout_width="match_parent"
+            android:layout_height="35dp"
+            android:layout_margin="8dp"
+            android:imeOptions="actionSearch"
+            android:drawableLeft="@android:drawable/ic_menu_search"
+            android:hint="Search Supervisors"
+            android:background="@drawable/bg_search"
+            android:drawablePadding="10dp"
+            android:inputType="none" />
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/et_search"
+            android:scrollbars="vertical"
+            android:background="@drawable/border_top_hint_color"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/rl_error"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center|center_horizontal"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tv_error_lbl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:gravity="center"
+            android:text="Error !!! please try again later"
+            android:textSize="20sp" />
+
+        <Button
+            android:id="@+id/btn_error_supervisor_list"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tv_error_lbl"
+            android:layout_centerInParent="true"
+            android:text="Retry" />
+    </RelativeLayout>
+</FrameLayout>

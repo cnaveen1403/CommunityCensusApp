@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tabs>
+    <tab
+        id="@+id/tab_supervisors"
+        icon="@drawable/ic_supervisor_list"
+        title="Supervisors" />
+    <tab
+        id="@+id/tab_family_heads"
+        icon="@drawable/ic_family_head"
+        title="Family Heads" />
+    <tab
+        id="@+id/tab_reports"
+        icon="@drawable/ic_report"
+        title="Reports" />
+</tabs>
