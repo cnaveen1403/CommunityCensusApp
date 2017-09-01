@@ -285,14 +285,14 @@ public class LoginSignupActivity extends Activity {
 Log.d(TAG, "phoneNum >> " + phoneNum.substring(1));
             parms.add(new BasicNameValuePair(params[0], params[1]));
             parms.add(new BasicNameValuePair(login_value, phoneNum.substring(1)));
+            parms.add(new BasicNameValuePair(CensusConstants.userRole, mUserRole));
 
-             /*
              //Print Full URL
              String paramString = URLEncodedUtils.format(parms, "utf-8");
              String url = CensusConstants.BASE_URL + CensusConstants.LOGIN_URL;
              url += "?";
              url += paramString;
-             Log.e(TAG, "url sending is >>> " + url);*/
+             Log.e(TAG, "url sending is >>> " + url);
 
             return new ConnectToServer().getDataFromUrl(CensusConstants.BASE_URL + CensusConstants.LOGIN_URL, parms);
         }
@@ -300,7 +300,7 @@ Log.d(TAG, "phoneNum >> " + phoneNum.substring(1));
         @Override
         protected void onPostExecute(String result) {
             progressDialog.dismiss();
-            Log.d(TAG, "result >>> " + result);
+            Log.e(TAG, "result >>> " + result);
             try {
                 JSONObject jsonObject = new JSONObject(result);
 
