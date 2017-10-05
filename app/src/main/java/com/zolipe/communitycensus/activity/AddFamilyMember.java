@@ -1,14 +1,12 @@
-package com.zolipe.communitycensus;
+package com.zolipe.communitycensus.activity;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -40,24 +38,29 @@ import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.zolipe.communitycensus.R;
 import com.zolipe.communitycensus.adapter.StateListAdapter;
 import com.zolipe.communitycensus.app.AppData;
+import com.zolipe.communitycensus.database.DbAction;
+import com.zolipe.communitycensus.database.DbAsyncParameter;
+import com.zolipe.communitycensus.database.DbAsyncTask;
+import com.zolipe.communitycensus.database.DbParameter;
+import com.zolipe.communitycensus.model.FamilyHead;
 import com.zolipe.communitycensus.model.State;
 import com.zolipe.communitycensus.permissions.PermissionsActivity;
 import com.zolipe.communitycensus.permissions.PermissionsChecker;
 import com.zolipe.communitycensus.util.CensusConstants;
+import com.zolipe.communitycensus.util.CommonUtils;
 import com.zolipe.communitycensus.util.ConnectToServer;
 import com.zolipe.communitycensus.util.SelectDocument;
 
 import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -69,6 +72,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -107,12 +111,13 @@ public class AddFamilyMember extends AppCompatActivity {
     private static final int REQUEST_GALLERY = 1002;
 
     String mGender = "male", mStateId = "-1", mCityId = "-1", mRelationshipId = "-1",
-            family_head_id, emailPattern = "[a-zA-Z0-9._-]+@[a-z]+\\.+[a-z]+", mEncodedData = "",
-    family_head_name, family_head_url;
+            emailPattern = "[a-zA-Z0-9._-]+@[a-z]+\\.+[a-z]+", mEncodedData = "";
+    FamilyHead mFamilyHead;
 
     private static String mImageType;
 
     Animation animation;
+    private String head_aadhaar, family_head_name, family_head_url;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,18 +130,14 @@ public class AddFamilyMember extends AppCompatActivity {
         }
 
         mContext = AddFamilyMember.this;
-        family_head_id = getIntent().getExtras().getString("member_id");
-        family_head_name = getIntent().getExtras().getString("member_name");
-        family_head_url = getIntent().getExtras().getString("member_url");
-        Log.e(TAG, "onCreate: familyheadID >>> " + family_head_id);
-        Log.e(TAG, "onCreate: familyhead Name >>> " + family_head_name);
-        Log.e(TAG, "onCreate: familyhead URL >>> " + family_head_url);
+
+        mFamilyHead = getIntent().getExtras().getParcelable("family_head");
+        head_aadhaar = mFamilyHead.getAadhaar();
+        family_head_name = mFamilyHead.getFirst_name() + " " + mFamilyHead.getLast_name();
+        family_head_url = mFamilyHead.getImage_url();
         initRelationsSpinner();
         initStateSpinner();
         initCitySpinner();
-
-        new GetRelationsListAsyncTask().execute();
-        new StatesListAsyncTask().execute();
 
         init();
     }
@@ -271,7 +272,11 @@ public class AddFamilyMember extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (isValidForm()) {
-                    new AddMemberAsyncTask().execute();
+                    if (CommonUtils.isActiveNetwork(mContext)) {
+                        new AddMemberAsyncTask().execute();
+                    } else {
+                        saveToLocalDB(true, "");
+                    }
                 }
             }
         });
@@ -288,6 +293,92 @@ public class AddFamilyMember extends AppCompatActivity {
                 return true;
             }
         });
+    }
+
+    private void saveToLocalDB(final boolean isOffline, String img_url) {
+        String isFamilyHead = "no";
+        String familyHeadId = mFamilyHead.getAadhaar();
+        String relationshipId = mRelationshipId;
+        String roleBasedUserId = AppData.getString(AddFamilyMember.this, CensusConstants.rolebased_user_id);
+        String createdBy = AppData.getString(AddFamilyMember.this, CensusConstants.userid);
+
+        final DbAsyncTask dbATask = new DbAsyncTask(AddFamilyMember.this, false, null);
+        DbParameter dbParams_duty = new DbParameter();
+
+        ArrayList<Object> parms = new ArrayList<Object>();
+        parms.add(getMemberFirstName());
+        parms.add(getMemberLastName());
+        parms.add(getMemberPhoneNumber());
+        parms.add(getMemberEmailId());
+        parms.add(getMemberAddress());
+        parms.add(getGender());
+        parms.add(CommonUtils.calculateAge(getMemberDateOfBirth()));
+        parms.add(img_url);
+        parms.add((isOffline) ? mEncodedData : "");
+        parms.add(relationshipId);
+        //TODO : Calculate Family Size and update
+        parms.add("1");
+        parms.add(getMemberZipcode());
+        parms.add(getMemberDateOfBirth());
+        parms.add(familyHeadId);
+        parms.add(isFamilyHead);
+        parms.add(isOffline ? "no" : "yes");
+        parms.add(mCityId);
+        parms.add(mStateId);
+        parms.add("india");
+        parms.add(mImageType);
+        parms.add("member");
+        parms.add(roleBasedUserId);
+        parms.add(createdBy);
+        parms.add(getMemberAadhaar());
+
+        dbParams_duty.addParamterList(parms);
+
+        final DbAsyncParameter dbAsyncParam_duty = new DbAsyncParameter(R.string.sql_insert_members,
+                DbAsyncTask.QUERY_TYPE_BULK_UPDATE, dbParams_duty, null);
+
+        DbAction dbAction_duty = new DbAction() {
+            @Override
+            public void execPreDbAction() {
+            }
+
+            @Override
+            public void execPostDbAction() {
+                final Dialog customDialog = new Dialog(mContext);
+                customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                customDialog.setContentView(R.layout.simple_alert);
+                customDialog.setCancelable(false);
+
+                String message = isOffline ? "No Internet Connectivity !!! your data saved successfully in local db."
+                        : "Member has been added successfully.";
+                ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Success");
+                ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(message);
+                TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
+                text.setText("OK");
+
+                text.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        customDialog.dismiss();
+                        Intent intent = new Intent(mContext, FamilyDetailsActivity.class);
+                        intent.putExtra("family_head", mFamilyHead);
+                        setResult(Activity.RESULT_CANCELED, intent);
+                        finish();
+                        overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
+
+                    }
+                });
+                customDialog.show();
+            }
+        };
+
+        dbAsyncParam_duty.setDbAction(dbAction_duty);
+
+        try {
+            dbATask.execute(dbAsyncParam_duty);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void hideKeyboard() {
@@ -317,7 +408,7 @@ public class AddFamilyMember extends AppCompatActivity {
 
         public void onDateSet(DatePicker view, int year, int month, int day) {
             // Do something with the chosen date
-            String selectedDate = year + "-" + ((month + 1)<10?"0"+(month+1):(month+1)) + "-" + day;
+            String selectedDate = year + "-" + ((month + 1) < 10 ? "0" + (month + 1) : (month + 1)) + "-" + (day < 10 ? "0" + day : day);
             et_member_dob.setError(null);
             et_member_dob.setText(selectedDate);
             validateDOB();
@@ -325,10 +416,10 @@ public class AddFamilyMember extends AppCompatActivity {
     }
 
     private static void validateDOB() {
-        if (! isValidDOB(getMemberDateOfBirth())) {
+        if (!isValidDOB(getMemberDateOfBirth())) {
             et_member_dob.requestFocus();
             et_member_dob.setError("Please enter valid Date of Birth.");
-        }else{
+        } else {
             et_aadhaar.requestFocus();
         }
     }
@@ -392,6 +483,11 @@ public class AddFamilyMember extends AppCompatActivity {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         // TODO Auto-generated method stub
         super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == 0 && resultCode == 0) {
+            openFileChooserDialog();
+        }
+
         Uri correctedUri = null;
         if (resultCode == RESULT_OK) {
             String realPath;
@@ -415,7 +511,7 @@ public class AddFamilyMember extends AppCompatActivity {
 //                mEncodedData = "";
                 Uri selectedImageUri = data.getData();
 
-                realPath = getRealPathFromURI(selectedImageUri);
+//                realPath = getRealPathFromURI(selectedImageUri);
                 try {
                     Bitmap imageBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImageUri);
                     imageBitmap = imageOrientationValidator(imageBitmap, SelectDocument.getPath(mContext, selectedImageUri));
@@ -497,6 +593,8 @@ public class AddFamilyMember extends AppCompatActivity {
 
     private void initRelationsSpinner() {
         sp_relations = (MaterialSpinner) findViewById(R.id.spinner_relations);
+        mRelationsList = CommonUtils.getRelationsList(mContext);
+//        prepareRelationsList(mRelationsList);
         mRelationsAdapter = new StateListAdapter(mContext, mRelationsList);
         sp_relations.setAdapter(mRelationsAdapter);
         sp_relations.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -520,6 +618,8 @@ public class AddFamilyMember extends AppCompatActivity {
 
     private void initStateSpinner() {
         spinner_state = (MaterialSpinner) findViewById(R.id.spinner_state);
+//        prepareStateList();
+        mStateList = CommonUtils.getStatesList(mContext);
         mStateListAdapter = new StateListAdapter(mContext, mStateList);
         spinner_state.setAdapter(mStateListAdapter);
         spinner_state.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -528,9 +628,9 @@ public class AddFamilyMember extends AppCompatActivity {
 //                Log.d(LOG_TAG, "Item On Position >> "+ position);
                 if (position != -1) {
                     String state_id = mStateList.get(position).getId();
-                    mStateId = state_id;
-                    new GetCityListAsync().execute(state_id);
                     resetCitySpinner();
+                    mStateId = state_id;
+                    prepareCityList();
 //                    Log.d(LOG_TAG, "Item on position " + position + " : " + state_id + " Selected");
 //                    Log.d(LOG_TAG, "Item on position " + position + " : " + mStateList.get(position).getName() + " Selected");
                 }
@@ -541,6 +641,67 @@ public class AddFamilyMember extends AppCompatActivity {
 //                Toast.makeText(mContext, "Nothing Selected", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void prepareCityList() {
+        final DbAsyncTask dbATask = new DbAsyncTask(mContext, false, null);
+        DbParameter dbParams = new DbParameter();
+
+        ArrayList<Object> parms = new ArrayList<Object>();
+        parms.add(mStateId);
+        dbParams.addParamterList(parms);
+        final DbAsyncParameter dbAsyncParam = new DbAsyncParameter(R.string.sql_select_cities, DbAsyncTask.QUERY_TYPE_CURSOR, dbParams, null);
+
+        DbAction dbAction = new DbAction() {
+            @Override
+            public void execPreDbAction() {
+            }
+
+            @Override
+            public void execPostDbAction() {
+                Cursor cur = dbAsyncParam.getQueryCursor();
+                if (cur == null) {
+                    return;
+                }
+
+                if (cur.moveToFirst()) {
+                    do {
+                        String id = cur.getString(cur.getColumnIndex("city_id"));
+                        String name = cur.getString(cur.getColumnIndex("city_name"));
+
+                        if (mCityList.size() == 0) {
+                            mCityList.add(new State(id, name));
+                        } else {
+                            boolean bStatus = true;
+                            Iterator<State> iter = mCityList.iterator();
+                            while (iter.hasNext()) {
+//                                    Log.d(TAG, "============ Inside if condition iterator ============= ");
+                                State obj = iter.next();
+                                if (id.equals(obj.getId())) {
+                                    bStatus = false;
+                                }
+                            }
+                            Log.d(TAG, "bStatus >>>> " + bStatus);
+                            if (bStatus) {
+//                                Log.d("SuperFragment", "************ Object Has been added successfully ************ ");
+                                mCityList.add(new State(id, name));
+                            }
+                        }
+                    }
+                    while (cur.moveToNext());
+                    mCityListAdapter.notifyDataSetChanged();
+                }
+                cur.close();
+            }
+        };
+
+        dbAsyncParam.setDbAction(dbAction);
+
+        try {
+            dbATask.execute(dbAsyncParam);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void resetCitySpinner() {
@@ -557,18 +718,14 @@ public class AddFamilyMember extends AppCompatActivity {
         spinner_city.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
-//                Log.d(LOG_TAG, "Item On Position >> "+ position);
                 if (position != -1) {
                     String city_id = mCityList.get(position).getId();
                     mCityId = city_id;
-//                    Log.d(LOG_TAG, "Item on position " + position + " : " + city_id + " Selected");
-//                    Log.d(LOG_TAG, "Item on position " + position + " : " + mCityList.get(position).getName() + " Selected");
                 }
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> adapterView) {
-//                Toast.makeText(mContext, "Nothing Selected", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -612,7 +769,7 @@ public class AddFamilyMember extends AppCompatActivity {
     private boolean isValidForm() {
         boolean bStatus = true;
 
-        if (mRelationshipId.equals("-1")){
+        if (mRelationshipId.equals("-1")) {
             bStatus = false;
             sp_relations.requestFocus();
             Toast.makeText(this, "Please select Relationship.", Toast.LENGTH_SHORT).show();
@@ -628,7 +785,7 @@ public class AddFamilyMember extends AppCompatActivity {
             bStatus = false;
             et_member_dob.requestFocus();
             et_member_dob.setError("Please enter Date of Birth");
-        }else if (!isValidDOB (getMemberDateOfBirth())) {
+        } else if (!isValidDOB(getMemberDateOfBirth())) {
             bStatus = false;
             et_member_dob.requestFocus();
             et_member_dob.setError("Please select valid Date of Birth");
@@ -640,7 +797,7 @@ public class AddFamilyMember extends AppCompatActivity {
             bStatus = false;
             et_phone_no.requestFocus();
             et_phone_no.setError("Please enter valid mobile number");
-        } else if (getMemberEmailId().equals("")){
+        } else if (getMemberEmailId().equals("")) {
             bStatus = false;
             et_email.requestFocus();
             et_email.setError("Please enter valid email");
@@ -672,8 +829,7 @@ public class AddFamilyMember extends AppCompatActivity {
     private static boolean isValidDOB(String memberDateOfBirth) {
         Date todaysDate = new Date();
         String formattedDate = new SimpleDateFormat("yyyy-MM-dd").format(todaysDate);
-        Log.e(TAG, "isValidDateOfBirth: after comparision" + formattedDate.compareTo(memberDateOfBirth) );
-        return ((formattedDate.compareTo(memberDateOfBirth) < 0) ? false:true );
+        return ((formattedDate.compareTo(memberDateOfBirth) < 0) ? false : true);
     }
 
     private boolean isValidAadhar() {
@@ -698,252 +854,6 @@ public class AddFamilyMember extends AppCompatActivity {
         return bStatus;
     }
 
-    public class GetRelationsListAsyncTask extends AsyncTask<Void, Void, String> {
-        final Dialog progressDialog = new Dialog(mContext, R.style.progress_dialog);
-
-        @Override
-        protected void onPreExecute() {
-            progressDialog.setContentView(R.layout.progress_dialog);
-            progressDialog.setCancelable(false);
-            progressDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            TextView msg = (TextView) progressDialog.findViewById(R.id.id_tv_loadingmsg);
-            msg.setText("Please wait ...");
-            progressDialog.setCanceledOnTouchOutside(false);
-            progressDialog.show();
-        }
-
-        @Override
-        protected String doInBackground(Void... params) {
-            return new ConnectToServer().getDataFromUrlGETMethod(CensusConstants.BASE_URL + CensusConstants.GET_RELATIONS_LIST_URL);
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            final Dialog customDialog = new Dialog(mContext);
-            customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-            customDialog.setContentView(R.layout.simple_alert);
-            customDialog.setCancelable(false);
-
-            progressDialog.dismiss();
-//            Log.d(LOG_TAG, "on postexecute result >>> " + result);
-            try {
-                JSONObject jsonObject = new JSONObject(result);
-                String status = jsonObject.getString("status");
-                String status_code = jsonObject.getString("status_code");
-                String response = jsonObject.getString("response");
-
-                if (status.equals("success") && status_code.equals("1003")) {
-                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
-                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
-                    TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                    text.setText("OK");
-
-                    text.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            customDialog.dismiss();
-                            finish();
-                            overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                        }
-                    });
-                    customDialog.show();
-                } else if (status.equals("success") && status_code.equals("1000")) {
-                    mRelationsList.clear();
-                    JSONArray jsonArray = jsonObject.getJSONArray("data");
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject explrObject = jsonArray.getJSONObject(i);
-                        String id = explrObject.getString("relation_id");
-                        String name = explrObject.getString("relation_name");
-                        mRelationsList.add(new State(id, name));
-                    }
-
-                    mRelationsAdapter.notifyDataSetChanged();
-                }
-            } catch (JSONException jsonException) {
-                jsonException.printStackTrace();
-                ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Alert");
-                ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText("Server not Responding, please try again after sometime.");
-                TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                text.setText("OK");
-
-                text.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        customDialog.dismiss();
-                        finish();
-                        overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                    }
-                });
-                customDialog.show();
-            }
-        }
-    }
-
-    public class StatesListAsyncTask extends AsyncTask<Void, Void, String> {
-        final Dialog progressDialog = new Dialog(mContext, R.style.progress_dialog);
-
-        @Override
-        protected void onPreExecute() {
-            progressDialog.setContentView(R.layout.progress_dialog);
-            progressDialog.setCancelable(false);
-            progressDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            TextView msg = (TextView) progressDialog.findViewById(R.id.id_tv_loadingmsg);
-            msg.setText("Please wait ...");
-            progressDialog.setCanceledOnTouchOutside(false);
-            progressDialog.show();
-        }
-
-        @Override
-        protected String doInBackground(Void... params) {
-            return new ConnectToServer().getDataFromUrlGETMethod(CensusConstants.BASE_URL + CensusConstants.GET_STATES_URL);
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            progressDialog.dismiss();
-            final Dialog customDialog = new Dialog(mContext);
-            customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-            customDialog.setContentView(R.layout.simple_alert);
-            customDialog.setCancelable(false);
-
-            Log.d(TAG, "on postexecute result >>> " + result);
-            try {
-                JSONObject jsonObject = new JSONObject(result);
-                String status = jsonObject.getString("status");
-                String status_code = jsonObject.getString("status_code");
-                String response = jsonObject.getString("response");
-
-                if (status.equals("success") && status_code.equals("1003")) {
-                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
-                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
-                    TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                    text.setText("OK");
-
-                    text.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            customDialog.dismiss();
-                            finish();
-                            overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                        }
-                    });
-                    customDialog.show();
-                } else if (status.equals("success") && status_code.equals("1000")) {
-                    mStateList.clear();
-                    JSONArray jsonArray = jsonObject.getJSONArray("data");
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject explrObject = jsonArray.getJSONObject(i);
-                        String id = explrObject.getString("state_id");
-                        String name = explrObject.getString("state_name");
-                        mStateList.add(new State(id, name));
-                    }
-
-                    mStateListAdapter.notifyDataSetChanged();
-                }
-            } catch (JSONException jsonException) {
-                jsonException.printStackTrace();
-                ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Alert");
-                ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText("Server not Responding, please try again after sometime.");
-                TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                text.setText("OK");
-
-                text.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        customDialog.dismiss();
-                        finish();
-                        overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                    }
-                });
-                customDialog.show();
-            }
-        }
-    }
-
-    private class GetCityListAsync extends AsyncTask<String, Void, String> {
-        final Dialog progressDialog = new Dialog(mContext, R.style.progress_dialog);
-
-        @Override
-        protected void onPreExecute() {
-            progressDialog.setContentView(R.layout.progress_dialog);
-            progressDialog.setCancelable(false);
-            progressDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            TextView msg = (TextView) progressDialog.findViewById(R.id.id_tv_loadingmsg);
-            msg.setText("Please wait ...");
-            progressDialog.setCanceledOnTouchOutside(false);
-            progressDialog.show();
-        }
-
-        @Override
-        protected String doInBackground(String... params) {
-            String state_id = params[0];
-            List<NameValuePair> parms = new LinkedList<NameValuePair>();
-            parms.add(new BasicNameValuePair(CensusConstants.state_id, state_id));
-            return new ConnectToServer().getDataFromUrl(CensusConstants.BASE_URL + CensusConstants.GET_CITY_LIST_URL, parms);
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            final Dialog customDialog = new Dialog(mContext);
-            customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-            customDialog.setContentView(R.layout.simple_alert);
-            customDialog.setCancelable(false);
-
-            progressDialog.dismiss();
-            Log.d(TAG, "on postexecute result >>> " + result);
-            try {
-                JSONObject jsonObject = new JSONObject(result);
-                String status = jsonObject.getString("status");
-                String status_code = jsonObject.getString("status_code");
-                String response = jsonObject.getString("response");
-
-                if (status.equals("success") && status_code.equals("1003")) {
-                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
-                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
-                    TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                    text.setText("OK");
-
-                    text.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            customDialog.dismiss();
-                            finish();
-                            overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                        }
-                    });
-                    customDialog.show();
-                } else if (status.equals("success") && status_code.equals("1000")) {
-                    mCityList.clear();
-                    JSONArray jsonArray = jsonObject.getJSONArray("data");
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject explrObject = jsonArray.getJSONObject(i);
-                        String id = explrObject.getString("city_id");
-                        String name = explrObject.getString("city_name");
-                        mCityList.add(new State(id, name));
-                    }
-
-                    mCityListAdapter.notifyDataSetChanged();
-                }
-            } catch (JSONException jsonException) {
-                jsonException.printStackTrace();
-                ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Alert");
-                ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText("Server not Responding, please try again after sometime.");
-                TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                text.setText("OK");
-
-                text.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        customDialog.dismiss();
-                        finish();
-                        overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                    }
-                });
-                customDialog.show();
-            }
-        }
-    }
-
     private class AddMemberAsyncTask extends AsyncTask<Void, Void, String> {
         final Dialog progressDialog = new Dialog(mContext, R.style.progress_dialog);
 
@@ -966,13 +876,14 @@ public class AddFamilyMember extends AppCompatActivity {
             String userRole = AppData.getString(mContext, CensusConstants.userRole);
 
             parms.add(new BasicNameValuePair(CensusConstants.isFamilyHead, "no"));
-            parms.add(new BasicNameValuePair(CensusConstants.familyHeadId, family_head_id));
+//            parms.add(new BasicNameValuePair(CensusConstants.familyHeadId, family_head_id));
             parms.add(new BasicNameValuePair(CensusConstants.relationshipId, mRelationshipId));
             parms.add(new BasicNameValuePair(CensusConstants.firstName, getMemberFirstName()));
             parms.add(new BasicNameValuePair(CensusConstants.lastName, getMemberLastName()));
             parms.add(new BasicNameValuePair(CensusConstants.gender, getGender()));
             parms.add(new BasicNameValuePair(CensusConstants.dob, getMemberDateOfBirth()));
-            parms.add(new BasicNameValuePair(CensusConstants.phoneNumber, "91"+getMemberPhoneNumber()));
+            parms.add(new BasicNameValuePair(CensusConstants.phoneNumber, "91" + getMemberPhoneNumber()));
+            parms.add(new BasicNameValuePair(CensusConstants.head_aadhar_number, mFamilyHead.getAadhaar()));
             parms.add(new BasicNameValuePair(CensusConstants.aadhaar, getMemberAadhaar()));
             parms.add(new BasicNameValuePair(CensusConstants.emailId, getMemberEmailId()));
             parms.add(new BasicNameValuePair(CensusConstants.address, getMemberAddress()));
@@ -981,16 +892,16 @@ public class AddFamilyMember extends AppCompatActivity {
             parms.add(new BasicNameValuePair(CensusConstants.country, "india"));
             parms.add(new BasicNameValuePair(CensusConstants.zipcode, getMemberZipcode()));
             parms.add(new BasicNameValuePair(CensusConstants.userAvatar, mEncodedData));
-            parms.add(new BasicNameValuePair(CensusConstants.userRole, "member"));
             parms.add(new BasicNameValuePair(CensusConstants.imageType, mImageType));
+            parms.add(new BasicNameValuePair(CensusConstants.userRole, "member"));
             parms.add(new BasicNameValuePair(CensusConstants.rolebased_user_id, AppData.getString(mContext, CensusConstants.rolebased_user_id)));
             parms.add(new BasicNameValuePair(CensusConstants.createdBy, AppData.getString(mContext, CensusConstants.userid)));
 
-            String paramString = URLEncodedUtils.format(parms, "utf-8");
+            /*String paramString = URLEncodedUtils.format(parms, "utf-8");
             String url = CensusConstants.BASE_URL + CensusConstants.ADD_MEMBER_URL;
             url += "?";
             url += paramString;
-            Log.e(TAG, "url sending is >>> " + url);
+            Log.e(TAG, "url sending is >>> " + url);*/
 
             return new ConnectToServer().getDataFromUrl(CensusConstants.BASE_URL + CensusConstants.ADD_MEMBER_URL, parms);
         }
@@ -1006,7 +917,7 @@ public class AddFamilyMember extends AppCompatActivity {
             progressDialog.dismiss();
 
             Log.d(TAG, "on post execute result >>> " + result);
-            if (result.equals("")){
+            if (result.equals("")) {
                 ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Alert");
                 ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText("Server not Responding, please try again after sometime.");
                 TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
@@ -1016,14 +927,14 @@ public class AddFamilyMember extends AppCompatActivity {
                     public void onClick(View v) {
                         customDialog.dismiss();
                         Intent intent = new Intent(mContext, FamilyDetailsActivity.class);
-                        intent.putExtra("member_id", family_head_id);
+                        intent.putExtra("family_head", mFamilyHead);
                         setResult(Activity.RESULT_CANCELED, intent);
                         finish();
                         overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
                     }
                 });
                 customDialog.show();
-            }else {
+            } else {
                 try {
                     JSONObject jsonObject = new JSONObject(result);
                     String status = jsonObject.getString("status");
@@ -1031,25 +942,9 @@ public class AddFamilyMember extends AppCompatActivity {
                     String response = jsonObject.getString("response");
 
                     if (status.equals("success") && status_code.equals("1000")) {
-                        final String member_id = jsonObject.getString("member_id");
-
-                        ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Success");
-                        ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText("Member has been added successfully.");
-                        TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                        text.setText("OK");
-
-                        text.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                customDialog.dismiss();
-                                Intent intent = new Intent(mContext, FamilyDetailsActivity.class);
-                                intent.putExtra("member_id", member_id);
-                                setResult(Activity.RESULT_OK, intent);
-                                finish();
-                            }
-                        });
-                        customDialog.show();
-                    }else if (status.equals("success") && status_code.equals("1003")) {
+                        final String image_url = jsonObject.getString("image_url");
+                        saveToLocalDB(false, image_url);
+                    } else if (status.equals("success") && status_code.equals("1003")) {
                         ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
                         ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
                         TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
@@ -1062,7 +957,7 @@ public class AddFamilyMember extends AppCompatActivity {
                             }
                         });
                         customDialog.show();
-                    } else if (status.equals("error")){
+                    } else if (status.equals("error")) {
                         ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
                         ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
                         TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
@@ -1086,11 +981,6 @@ public class AddFamilyMember extends AppCompatActivity {
                         @Override
                         public void onClick(View v) {
                             customDialog.dismiss();
-                            Intent intent = new Intent(mContext, FamilyDetailsActivity.class);
-                            intent.putExtra("member_id", family_head_id);
-                            setResult(Activity.RESULT_CANCELED, intent);
-                            finish();
-                            overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
                         }
                     });
                     customDialog.show();

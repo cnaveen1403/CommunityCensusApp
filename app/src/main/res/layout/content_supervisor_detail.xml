@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="com.zolipe.communitycensus.SupervisorDetail"
+    tools:context="com.zolipe.communitycensus.activity.SupervisorDetail"
     tools:showIn="@layout/activity_supervisor_detail">
     <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/iv_image"

@@ -1,4 +1,4 @@
-package com.zolipe.communitycensus;
+package com.zolipe.communitycensus.activity;
 
 import android.app.Dialog;
 import android.content.Context;
@@ -20,6 +20,7 @@ import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.zolipe.communitycensus.R;
 import com.zolipe.communitycensus.adapter.FamilyHeadAdapter;
 import com.zolipe.communitycensus.app.AppData;
 import com.zolipe.communitycensus.interfaces.FamilyHeadsListItemClickListener;
@@ -125,7 +126,7 @@ public class FamilyMembers extends AppCompatActivity implements FamilyHeadsListI
     }
 
     @Override
-    public void onClick(View view, FamilyHead obj) {
+    public void onFamilyHeadClicked(View view, FamilyHead obj) {
         Intent intent = new Intent(FamilyMembers.this, FamilyDetailsActivity.class);
         intent.putExtra("member_id",obj.getId());
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -214,7 +215,7 @@ public class FamilyMembers extends AppCompatActivity implements FamilyHeadsListI
                             familyHeadses.add(new FamilyHead(member_id, first_name, last_name,
                                     phone_number, aadhaar, email,
                                     address, gender, image_url, age, relationship, size, zipcode
-                                    , dob, familyHeadId, isFamilyHead));
+                                    , dob, familyHeadId, isFamilyHead, "yes"));
                         } else {
                             boolean bStatus = true;
                             Iterator<FamilyHead> iter = familyHeadses.iterator();
@@ -234,7 +235,7 @@ public class FamilyMembers extends AppCompatActivity implements FamilyHeadsListI
                                 familyHeadses.add(new FamilyHead(member_id, first_name, last_name,
                                         phone_number, aadhaar, email,
                                         address, gender, image_url, age, relationship, size, zipcode
-                                        , dob, familyHeadId, isFamilyHead));
+                                        , dob, familyHeadId, isFamilyHead, "yes"));
                             }
                         }
                     }

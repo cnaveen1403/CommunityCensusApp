@@ -62,6 +62,18 @@
             android:layout_centerHorizontal="true"
             android:layout_below="@+id/tv_member_supervisor"/>
 
+        <Button
+            android:id="@+id/account_kit_button_login"
+            android:layout_width="200dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center"
+            android:elevation="2dp"
+            android:text="Login with Mobile"
+            android:textAlignment="center"
+            android:textAllCaps="false"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/auth_button_login"/>
+
         <TextView
             android:id="@+id/tv_member_login"
             android:layout_width="wrap_content"

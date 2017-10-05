@@ -291,6 +291,11 @@ public class EditMemberFragment extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         // TODO Auto-generated method stub
         super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == 0 && resultCode == 0) {
+            openFileChooserDialog();
+        }
+
         Uri correctedUri = null;
         if (requestCode == REQUEST_CAMERA && resultCode == RESULT_OK) {
             //----- Correct Image Rotation ----//

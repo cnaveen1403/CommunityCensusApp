@@ -14,7 +14,7 @@
         android:layout_height="match_parent"
         android:background="@drawable/bg"
         android:layout_above="@+id/ll_message_area"
-        tools:context="com.zolipe.communitycensus.TelegramBroadcast">
+        tools:context="com.zolipe.communitycensus.activity.TelegramBroadcast">
         <include layout="@layout/toolbar" />
 
         <FrameLayout

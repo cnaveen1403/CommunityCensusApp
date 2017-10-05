@@ -14,4 +14,7 @@
     <color name="paytm_color">#012b72</color>
     <color name="hint_color">#9b9999</color>
     <color name="pink">#fa6c9c</color>
+
+    <color name="grey_100">#F5F5F5</color>
+    <color name="grey_300">#E0E0E0</color>
 </resources>

@@ -1,19 +1,12 @@
-package com.zolipe.communitycensus;
+package com.zolipe.communitycensus.activity;
 
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
-import android.text.Spanned;
-import android.text.TextPaint;
-import android.text.method.LinkMovementMethod;
-import android.text.style.ClickableSpan;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -22,7 +15,6 @@ import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -32,9 +24,18 @@ import com.digits.sdk.android.Digits;
 import com.digits.sdk.android.DigitsAuthButton;
 import com.digits.sdk.android.DigitsException;
 import com.digits.sdk.android.DigitsSession;
+import com.facebook.accountkit.AccessToken;
+import com.facebook.accountkit.AccountKit;
+import com.facebook.accountkit.AccountKitError;
+import com.facebook.accountkit.AccountKitLoginResult;
+import com.facebook.accountkit.ui.AccountKitActivity;
+import com.facebook.accountkit.ui.AccountKitConfiguration;
+import com.facebook.accountkit.ui.LoginType;
 import com.twitter.sdk.android.core.TwitterAuthConfig;
 import com.twitter.sdk.android.core.TwitterCore;
+import com.zolipe.communitycensus.R;
 import com.zolipe.communitycensus.app.AppData;
+import com.zolipe.communitycensus.database.GDatabaseHelper;
 import com.zolipe.communitycensus.util.CensusConstants;
 import com.zolipe.communitycensus.util.ConnectToServer;
 
@@ -57,6 +58,9 @@ import static com.zolipe.communitycensus.util.CensusConstants.TWITTER_SECRET;
 public class LoginSignupActivity extends Activity {
 
     private static final String TAG = LoginSignupActivity.class.getSimpleName();
+
+    AccessToken accessToken = AccountKit.getCurrentAccessToken();
+    public static int APP_REQUEST_CODE = 99;
     Button btn_login, btn_digits_login, btn_signup;
     Context mContext;
     EditText et_username, et_password;
@@ -65,16 +69,21 @@ public class LoginSignupActivity extends Activity {
     Animation animation;
     String mUserRole = "supervisor";
 
+    private static final String[] WHITE_LIST = new String[]{
+            "IN"
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         mContext = LoginSignupActivity.this;
-
+        GDatabaseHelper mDatabaseHelper = new GDatabaseHelper(LoginSignupActivity.this);
+        mDatabaseHelper.getInstance(LoginSignupActivity.this);
         TwitterAuthConfig authConfig = new TwitterAuthConfig(TWITTER_KEY,
                 TWITTER_SECRET);
         Digits.Builder digitsBuilder = new Digits.Builder().withTheme(R.style.CustomDigitsTheme);
-        Fabric.with(this, new TwitterCore(authConfig), digitsBuilder.build());
+        Fabric.with(this, new TwitterCore(authConfig), digitsBuilder.build(), new Digits.Builder().build());
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_login_signup);
@@ -190,6 +199,88 @@ public class LoginSignupActivity extends Activity {
                 }
             }
         });
+
+        Button mPhoneSignInButton = (Button) findViewById(R.id.account_kit_button_login);
+        mPhoneSignInButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                phoneLogin(view);
+            }
+        });
+
+        if (accessToken != null) {
+            //Handle Returning User
+        } else {
+            //Handle new or logged out user
+        }
+    }
+
+    @Override
+    protected void onActivityResult(
+            final int requestCode,
+            final int resultCode,
+            final Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == APP_REQUEST_CODE) { // confirm that this response matches your request
+            AccountKitLoginResult loginResult = data.getParcelableExtra(AccountKitLoginResult.RESULT_KEY);
+            String toastMessage;
+            if (loginResult.getError() != null) {
+                toastMessage = loginResult.getError().getErrorType().getMessage();
+                showErrorActivity(loginResult.getError());
+            } else if (loginResult.wasCancelled()) {
+                toastMessage = "Login Cancelled";
+            } else {
+                if (loginResult.getAccessToken() != null) {
+                    toastMessage = "Success:" + loginResult.getAccessToken().getAccountId();
+                } else {
+                    toastMessage = String.format(
+                            "Success:%s...",
+                            loginResult.getAuthorizationCode().substring(0,10));
+                }
+
+                // If you have an authorization code, retrieve it from
+                // loginResult.getAuthorizationCode()
+                // and pass it to your server and exchange it for an access token.
+
+                // Success! Start your next activity...
+                goToMyLoggedInActivity();
+            }
+
+            // Surface the result to your user in an appropriate way.
+            Toast.makeText(
+                    this,
+                    toastMessage,
+                    Toast.LENGTH_LONG)
+                    .show();
+        }
+    }
+
+    private void showErrorActivity(AccountKitError error) {
+        Toast.makeText(mContext, "Error Occured", Toast.LENGTH_SHORT).show();
+        /*Intent intent = new Intent(LoginSignupActivity.this, ErrorActivity.class);
+        startActivity(intent);*/
+    }
+
+    private void goToMyLoggedInActivity() {
+        Toast.makeText(mContext, "Successfully verified phone number", Toast.LENGTH_SHORT).show();
+        /*Intent intent = new Intent(LoginSignupActivity.this, HomeActivity.class);
+        startActivity(intent);*/
+    }
+
+    public void phoneLogin(final View view) {
+        final Intent intent = new Intent(LoginSignupActivity.this, AccountKitActivity.class);
+        AccountKitConfiguration.AccountKitConfigurationBuilder configurationBuilder =
+                new AccountKitConfiguration.AccountKitConfigurationBuilder(
+                        LoginType.PHONE,
+                        AccountKitActivity.ResponseType.CODE); // or .ResponseType.TOKEN
+        configurationBuilder.setReceiveSMS(true);
+        configurationBuilder.setSMSWhitelist(WHITE_LIST);
+//        configurationBuilder.setDefaultCountryCode("IN");
+        // ... perform additional configuration ...
+        intent.putExtra(
+                AccountKitActivity.ACCOUNT_KIT_ACTIVITY_CONFIGURATION,
+                configurationBuilder.build());
+        startActivityForResult(intent, APP_REQUEST_CODE);
     }
 
     private boolean isValidParams() {
@@ -282,7 +373,7 @@ public class LoginSignupActivity extends Activity {
             List<NameValuePair> parms = new LinkedList<NameValuePair>();
             String login_value = params[1];
             String phoneNum = params[2];
-Log.d(TAG, "phoneNum >> " + phoneNum.substring(1));
+Log.e(TAG, "phoneNum >> " + phoneNum.substring(1));
             parms.add(new BasicNameValuePair(params[0], params[1]));
             parms.add(new BasicNameValuePair(login_value, phoneNum.substring(1)));
             parms.add(new BasicNameValuePair(CensusConstants.userRole, mUserRole));

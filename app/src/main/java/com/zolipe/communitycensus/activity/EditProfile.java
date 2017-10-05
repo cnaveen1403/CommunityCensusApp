@@ -1,35 +1,33 @@
-package com.zolipe.communitycensus;
+package com.zolipe.communitycensus.activity;
 
 import android.Manifest;
-import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.drawable.ColorDrawable;
 import android.media.ExifInterface;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.InputType;
 import android.util.Base64;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
-import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.MimeTypeMap;
 import android.widget.AdapterView;
@@ -41,6 +39,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.zolipe.communitycensus.R;
 import com.zolipe.communitycensus.adapter.StateListAdapter;
 import com.zolipe.communitycensus.app.AppData;
 import com.zolipe.communitycensus.model.State;
@@ -58,11 +59,9 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -71,59 +70,52 @@ import fr.ganfra.materialspinner.MaterialSpinner;
 
 import static com.bumptech.glide.load.resource.bitmap.TransformationUtils.rotateImage;
 
-public class AddSupervisor extends AppCompatActivity {
+public class EditProfile extends AppCompatActivity {
 
-    private static String TAG = "AddSupervisor";
+    Context mContext;
 
     private static final String[] PERMISSIONS_READ_STORAGE = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.CAMERA};
-    Context mContext;
-    ImageView image_male, image_female;
-    CircleImageView ivAddProfileImage;
-    EditText et_first_name;
-    EditText et_last_name;
-    EditText et_phone_no;
-    static EditText et_email;
-    EditText et_address;
-    EditText et_zipcode;
-    EditText et_aadhaar;
-    static EditText et_supervisor_dob;
-    ToggleButton toggleButton_gender;
-    MaterialSpinner spinner_state, spinner_city;
-
-    Button btn_add_supervisor;
+    private static final int REQUEST_CAMERA = 1001;
+    private static final int REQUEST_GALLERY = 1002;
     private PermissionsChecker checker;
     private final CharSequence[] items = {"Take Photo", "From Gallery"};
     Uri mCapturedImageURI;
-    private static final int REQUEST_CAMERA = 1001;
-    private static final int REQUEST_GALLERY = 1002;
-    private String realPath, mStateId = "-1", mCityId = "-1";
-    private String mGender = "male";
-    private String mEncodedData = "";
+    String fileName = "temp.jpg";
+    private static String mImageType = "jpeg";
+    private String realPath, mStateId = "-1", mCityId = "-1", mGender = "male", mEncodedData = "";
 
-    private static String mImageType;
+    private static EditText et_first_name, et_last_name, et_dob, et_aadhaar, et_email, et_address, et_zipcode;
+    ToggleButton toggleButton_gender;
+    private ImageView image_male, image_female;
+    CircleImageView iv_add_image;
+    Button btn_register;
+    MaterialSpinner spinner2, spinner_city;
     private static StateListAdapter mStateListAdapter;
     private static ArrayList<State> mStateList = new ArrayList<>();
     private static StateListAdapter mCityListAdapter;
     private static ArrayList<State> mCityList = new ArrayList<>();
+
     String emailPattern = "[a-zA-Z0-9._-]+@[a-z]+\\.+[a-z]+";
+    private static String TAG = "EditProfile";
 
     Animation animation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_add_supervisor);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setContentView(R.layout.activity_edit_profile);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_signup);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
+
         init();
     }
 
     private void init() {
-        mContext = AddSupervisor.this;
-        new StatesListAsyncTask().execute();
+        mContext = EditProfile.this;
+        checker = new PermissionsChecker(this);
 
         animation = new TranslateAnimation(0, 0, 300, 0);
         // set Animation for 0.5 sec
@@ -133,24 +125,19 @@ public class AddSupervisor extends AppCompatActivity {
 
         et_first_name = (EditText) findViewById(R.id.et_first_name);
         et_last_name = (EditText) findViewById(R.id.et_last_name);
-        et_phone_no = (EditText) findViewById(R.id.et_phone_no);
+        et_dob = (EditText) findViewById(R.id.et_member_dob);
+//        et_phone_no = (EditText) findViewById(R.id.et_phone_no_signup);
         et_aadhaar = (EditText) findViewById(R.id.et_aadhaar_signup);
-        et_supervisor_dob = (EditText) findViewById(R.id.et_supervisor_dob);
         et_email = (EditText) findViewById(R.id.et_email);
         et_address = (EditText) findViewById(R.id.et_address);
         et_zipcode = (EditText) findViewById(R.id.et_zipcode);
         toggleButton_gender = (ToggleButton) findViewById(R.id.toggleButton_gender);
+        iv_add_image = (CircleImageView) findViewById(R.id.iv_add_image);
         image_female = (ImageView) findViewById(R.id.ivFemale);
         image_male = (ImageView) findViewById(R.id.ivMale);
+        btn_register = (Button) findViewById(R.id.btn_register);
 
-        initStateSpinner();
-        initCitySpinner();
-
-        ivAddProfileImage = (CircleImageView) findViewById(R.id.ivAddProfileImage);
-        btn_add_supervisor = (Button) findViewById(R.id.btn_add_supervisor);
-        checker = new PermissionsChecker(this);
-
-        ivAddProfileImage.setOnClickListener(new View.OnClickListener() {
+        iv_add_image.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (checker.lacksPermissions(PERMISSIONS_READ_STORAGE)) {
@@ -158,6 +145,23 @@ public class AddSupervisor extends AppCompatActivity {
                 } else {
                     openFileChooserDialog();
                 }
+            }
+        });
+
+        et_dob.setInputType(InputType.TYPE_NULL);
+        et_dob.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (hasFocus) {
+                    showDOBDialogue(v);
+                }
+            }
+        });
+
+        et_dob.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showDOBDialogue(v);
             }
         });
 
@@ -193,89 +197,76 @@ public class AddSupervisor extends AppCompatActivity {
             }
         });
 
-        et_supervisor_dob.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                if (hasFocus) {
-                    showDOBDialogue(v);
-                    hideKeyboard();
-                }
-            }
-        });
-
-        et_supervisor_dob.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showDOBDialogue(v);
-            }
-        });
-
-        btn_add_supervisor.setOnClickListener(new View.OnClickListener() {
+        btn_register.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (isValidated()) {
-                    new AddSupervisorAsyncTask().execute();
+                    updateProfile();
                 }
             }
         });
 
-        et_supervisor_dob.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                hideKeyboard();
-                et_supervisor_dob.clearFocus();
-                et_email.requestFocus();
-                return true;
-            }
-        });
-
-        et_address.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                    hideKeyboard();
-//                    et_address.clearFocus();
-                    spinner_state.requestFocus();
-                    spinner_state.performClick();
-                }
-                return true;
-            }
-        });
-    }
-
-    private void hideKeyboard() {
-        InputMethodManager inputManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-        inputManager.hideSoftInputFromWindow(this.getCurrentFocus().getWindowToken(),
-                InputMethodManager.HIDE_NOT_ALWAYS);
+        initStateSpinner();
+        initCitySpinner();
+        setProfileData();
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        super.onOptionsItemSelected(item);
+
         switch (item.getItemId()) {
             case android.R.id.home:
-                Intent intent = new Intent(AddSupervisor.this, HomeActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
                 finish();
                 overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
                 return true;
 
             default:
-                return super.onOptionsItemSelected(item);
+                return true;
         }
     }
 
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+        finish();
         overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
     }
 
+    private void setProfileData() {
+        String gender = AppData.getString(mContext, CensusConstants.gender);
+
+        et_first_name.setText(AppData.getString(mContext, CensusConstants.firstName));
+        et_last_name.setText(AppData.getString(mContext, CensusConstants.lastName));
+        Log.e(TAG, "setProfileData: Date >>>>>>>>> " + AppData.getString(mContext, CensusConstants.dob));
+        et_dob.setText(AppData.getString(mContext, CensusConstants.dob));
+//        et_phone_no.setText(AppData.getString(mContext, CensusConstants.phoneNumber));
+        et_aadhaar.setText(AppData.getString(mContext, CensusConstants.aadhaar));
+        et_email.setText(AppData.getString(mContext, CensusConstants.emailId));
+        et_address.setText(AppData.getString(mContext, CensusConstants.address));
+        et_zipcode.setText(AppData.getString(mContext, CensusConstants.zipcode));
+
+        if (gender.equals("male")) {
+            toggleButton_gender.setChecked(false);
+        } else {
+            toggleButton_gender.setChecked(true);
+        }
+
+        Glide.with(mContext).load(AppData.getString(mContext, CensusConstants.image_url))
+//                .thumbnail(0.5f)
+                .crossFade()
+                .dontAnimate()
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .placeholder(R.drawable.app_icon)
+                .into(iv_add_image);
+    }
+
     private void initStateSpinner() {
-        spinner_state = (MaterialSpinner) findViewById(R.id.spinner_state);
+        spinner2 = (MaterialSpinner) findViewById(R.id.spinner2);
+        prepareStateList();
         mStateListAdapter = new StateListAdapter(mContext, mStateList);
-        spinner_state.setAdapter(mStateListAdapter);
-        spinner_state.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        spinner2.setAdapter(mStateListAdapter);
+        spinner2.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
 //                Log.d(LOG_TAG, "Item On Position >> "+ position);
@@ -327,8 +318,48 @@ public class AddSupervisor extends AppCompatActivity {
         });
     }
 
+    private void prepareStateList() {
+        try {
+            String state_list = AppData.getString(mContext, "state_list_data");
+            Log.e(TAG, "prepareStateList: state_list >>>  " + state_list);
+            JSONArray jsonArray = new JSONArray(state_list);
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject explrObject = jsonArray.getJSONObject(i);
+                String id = explrObject.getString("state_id");
+                String name = explrObject.getString("state_name");
+
+                if (mStateList.size() == 0) {
+                    mStateList.add(new State(id, name));
+                } else {
+                    boolean bStatus = true;
+                    Iterator<State> iter = mStateList.iterator();
+                    while (iter.hasNext()) {
+                        Log.d(TAG, "============ Inside if condition iterator ============= ");
+                        State obj = iter.next();
+                        if (id.equals(obj.getId())) {
+                            bStatus = false;
+                        }
+                    }
+                    Log.d(TAG, "bStatus >>>> " + bStatus);
+                    if (bStatus) {
+//                                Log.d("SuperFragment", "************ Object Has been added successfully ************ ");
+                        mStateList.add(new State(id, name));
+                    }
+                }
+            }
+
+//            mStateListAdapter.notifyDataSetChanged();
+        } catch (JSONException jsonException) {
+            jsonException.printStackTrace();
+        }
+    }
+
+    private void startPermissionsActivity(String[] permission) {
+        PermissionsActivity.startActivityForResult(this, 0, permission);
+    }
+
     private void openFileChooserDialog() {
-        final Dialog dialog = new Dialog(AddSupervisor.this);
+        final Dialog dialog = new Dialog(EditProfile.this);
         // Include dialog.xml file
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         WindowManager.LayoutParams wmlp = dialog.getWindow().getAttributes();
@@ -363,7 +394,6 @@ public class AddSupervisor extends AppCompatActivity {
     }
 
     private void initCameraIntent() {
-        String fileName = "temp.jpg";
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.TITLE, fileName);
         mCapturedImageURI = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
@@ -382,16 +412,21 @@ public class AddSupervisor extends AppCompatActivity {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         // TODO Auto-generated method stub
         super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == 0 && resultCode == 0) {
+            openFileChooserDialog();
+        }
+
         Uri correctedUri = null;
         if (requestCode == REQUEST_CAMERA && resultCode == RESULT_OK) {
             //----- Correct Image Rotation ----//
             try {
                 Bitmap imageBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), mCapturedImageURI);
-                imageBitmap = imageOrientationValidator(imageBitmap, SelectDocument.getPath(AddSupervisor.this, mCapturedImageURI));
+                imageBitmap = imageOrientationValidator(imageBitmap, SelectDocument.getPath(EditProfile.this, mCapturedImageURI));
                 correctedUri = getImageUri(imageBitmap);
                 realPath = getRealPathFromURI(correctedUri);
 
-                ivAddProfileImage.setImageURI(correctedUri);
+                iv_add_image.setImageURI(correctedUri);
                 getEncoded64ImageStringFromBitmap(imageBitmap);
                 getMimeType(realPath);
             } catch (IOException e) {
@@ -402,11 +437,11 @@ public class AddSupervisor extends AppCompatActivity {
             realPath = getRealPathFromURI(selectedImageUri);
             try {
                 Bitmap imageBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImageUri);
-                imageBitmap = imageOrientationValidator(imageBitmap, SelectDocument.getPath(AddSupervisor.this, selectedImageUri));
+                imageBitmap = imageOrientationValidator(imageBitmap, SelectDocument.getPath(EditProfile.this, selectedImageUri));
                 correctedUri = getImageUri(imageBitmap);
                 realPath = getRealPathFromURI(correctedUri);
 
-                ivAddProfileImage.setImageURI(correctedUri);
+                iv_add_image.setImageURI(correctedUri);
                 getEncoded64ImageStringFromBitmap(imageBitmap);
                 getMimeType(realPath);
             } catch (Exception e) {
@@ -415,11 +450,13 @@ public class AddSupervisor extends AppCompatActivity {
         }
     }
 
-    public void getEncoded64ImageStringFromBitmap(Bitmap bitmap) {
+    public void getEncoded64ImageStringFromBitmap(Bitmap bitmap) throws IOException {
         ByteArrayOutputStream bao = new ByteArrayOutputStream();
+        bitmap = ThumbnailUtils.extractThumbnail(bitmap, 300, 300);
         bitmap.compress(Bitmap.CompressFormat.JPEG, 90, bao);
         byte[] ba = bao.toByteArray();
         mEncodedData = Base64.encodeToString(ba, Base64.DEFAULT);
+//        Log.d(LOG_TAG, "mEncodedData >> " + mEncodedData);
     }
 
     public static void getMimeType(String url) {
@@ -430,6 +467,7 @@ public class AddSupervisor extends AppCompatActivity {
         }
         String[] imageType = type.split("/");
         mImageType = imageType[1];
+//        Log.d(LOG_TAG, "mImageType >>> " + mImageType);
     }
 
     public String getRealPathFromURI(Uri contentUri) {
@@ -476,12 +514,9 @@ public class AddSupervisor extends AppCompatActivity {
         return bitmap;
     }
 
-    private void startPermissionsActivity(String[] permission) {
-        PermissionsActivity.startActivityForResult(this, 0, permission);
-    }
-
     private void showDOBDialogue(View v) {
-        hideKeyboard();
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(v.getWindowToken(), 1);
         DialogFragment dFragment = new DatePickerFragment();
         dFragment.show(getFragmentManager(), "date picker");
     }
@@ -501,76 +536,44 @@ public class AddSupervisor extends AppCompatActivity {
 
         public void onDateSet(DatePicker view, int year, int month, int day) {
             // Do something with the chosen date
-
-            String selectedDate = year + "-" + ((month + 1)<10?"0"+(month+1):(month+1)) + "-" + day;
-            et_supervisor_dob.setError(null);
-            et_supervisor_dob.setText(selectedDate);
-            validateDOB ();
+            String selectedDate = year + "-" + (month + 1) + "-" + day;
+            et_dob.setText(selectedDate);
         }
     }
 
-    private static void validateDOB() {
-        if (!isValidDateOfBirth(getSupervisorDOB())) {
-            et_supervisor_dob.requestFocus();
-            et_supervisor_dob.setError("Please enter valid Date of Birth.");
-        }else{
-            et_email.requestFocus();
-        }
+    public String getFname() {
+        return et_first_name.getText().toString();
     }
 
-    private void showAddImageDialog() {
-        final Dialog dialog = new Dialog(AddSupervisor.this);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.yes_no_alert);
-        ((TextView) dialog.findViewById(R.id.tv_title_yes_no)).setText("Alert");
-        ((TextView) dialog.findViewById(R.id.tv_message_yes_no)).setText("Please Add User Image, Do you wish to Add Profile Image ?");
+    public String getLname() {
+        return et_last_name.getText().toString();
+    }
 
-        Button btn_no = (Button) dialog.findViewById(R.id.btn_cancel);
+    public String getDateOfBirth() {
+        return et_dob.getText().toString();
+    }
 
-        btn_no.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-                mEncodedData = CensusConstants.mBasicAvatarData;
-            }
-        });
+    public String getAadhaar() {
+        return et_aadhaar.getText().toString();
+    }
 
-        Button btn_send = (Button) dialog.findViewById(R.id.btn_send);
-        btn_send.setText("Add");
-        btn_send.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-                if (checker.lacksPermissions(PERMISSIONS_READ_STORAGE)) {
-                    startPermissionsActivity(PERMISSIONS_READ_STORAGE);
-                } else {
-                    openFileChooserDialog();
-                }
-            }
-        });
-        dialog.show();
+    public String getEmail() {
+        return et_email.getText().toString();
+    }
+
+    public String getAddress() {
+        return et_address.getText().toString();
+    }
+
+    public String getZipcode() {
+        return et_zipcode.getText().toString();
     }
 
     private boolean isValidAadhar() {
         boolean bStatus = true;
         if (et_aadhaar.getText().toString().length() < 12) {
             bStatus = false;
-        } else if (getSupervisorAadhaar().equals("")) {
-            bStatus = false;
-        }
-
-        return bStatus;
-    }
-
-    private String getSupervisorAadhaar() {
-        return et_aadhaar.getText().toString();
-    }
-
-    private boolean isValidPhoneNo() {
-        boolean bStatus = true;
-        if (getSupervisorPhoneNo().length() < 10) {
-            bStatus = false;
-        } else if (getSupervisorPhoneNo().equals("")) {
+        } else if (getAadhaar().equals("")) {
             bStatus = false;
         }
 
@@ -579,333 +582,67 @@ public class AddSupervisor extends AppCompatActivity {
 
     private boolean isValidated() {
         boolean bStatus = true;
-
-        if (gerSupervisorFirstName().equals("")) {
+        if (getFname().equals("")) {
             bStatus = false;
+            et_first_name.requestFocus();
             et_first_name.setError("Please enter first name");
-        } else if (getSupervisorLastName().equals("")) {
+        } else if (getLname().equals("")) {
             bStatus = false;
+            et_last_name.requestFocus();
             et_last_name.setError("Please enter last name");
         } else if (!isValidAadhar()) {
             bStatus = false;
             et_aadhaar.requestFocus();
             et_aadhaar.setError("Please enter valid Aadhaar Number");
-        } else if (!isValidPhoneNo()) {
+        } else if (getDateOfBirth().equals("")) {
             bStatus = false;
-            et_phone_no.requestFocus();
-            et_phone_no.setError("Please enter valid mobile number");
-        } else if (getSupervisorDOB().equals("")) {
-            bStatus = false;
-            et_supervisor_dob.requestFocus();
-            et_supervisor_dob.setError("Please enter Date of Birth");
-        } else if (!isValidDateOfBirth(getSupervisorDOB())) {
-            bStatus = false;
-            et_supervisor_dob.requestFocus();
-            et_supervisor_dob.setError("Please enter valid Date of Birth.");
-        } else if (getSupervisorEmail().equals("")) {
+            et_dob.requestFocus();
+            et_dob.setError("Please enter Date of Birth");
+        } else if (getEmail().equals("")) {
             bStatus = false;
             et_email.requestFocus();
             et_email.setError("Please enter valid email");
-        } else if (!getSupervisorEmail().equals("") && !getSupervisorEmail().matches(emailPattern)) {
+        } else if (!getEmail().equals("") && !getEmail().matches(emailPattern)) {
             bStatus = false;
             et_email.requestFocus();
             et_email.setError("Please enter valid email");
-        } else if (getSupervisorAddress().equals("")) {
+        } else if (getAddress().equals("")) {
             bStatus = false;
             et_address.requestFocus();
             et_address.setError("Please enter Address");
         } else if (mStateId.equals("-1")) {
             bStatus = false;
-            spinner_state.requestFocus();
-            spinner_state.setError("Please select State");
+            spinner2.requestFocus();
+            spinner2.setError("Please select State");
         } else if (mCityId.equals("-1")) {
             bStatus = false;
             spinner_city.requestFocus();
             spinner_city.setError("Please select City");
-        } else if (getSupervisorZipcode().equals("")) {
+        } else if (getZipcode().equals("")) {
             bStatus = false;
             et_zipcode.requestFocus();
-            et_zipcode.setError("Please enter Zipcode");
-        } else if (mEncodedData.equals("")) {
-            bStatus = false;
-            showAddImageDialog();
+            et_zipcode.setError("Please enter zipcode");
         }
 
         return bStatus;
     }
 
-    private static boolean isValidDateOfBirth(String supervisorDOB) {
-        Date todaysDate = new Date();
-        String formattedDate = new SimpleDateFormat("yyyy-MM-dd").format(todaysDate);
-
-//        Log.e(TAG, "isValidDateOfBirth: formattedDate >>>> " + formattedDate);
-//        Log.e(TAG, "isValidDateOfBirth: supervisorDOB >>>> " + supervisorDOB);
-//        Log.e(TAG, "isValidDateOfBirth: todays date >>> " + todaysDate);
-        Log.e(TAG, "isValidDateOfBirth: after comparision" + formattedDate.compareTo(supervisorDOB) );
-        return ((formattedDate.compareTo(supervisorDOB) < 0) ? false:true );
-    }
-
-    public String gerSupervisorFirstName() {
-        return et_first_name.getText().toString();
-    }
-
-    public String getSupervisorLastName() {
-        return et_last_name.getText().toString();
-    }
-
-    public String getSupervisorGender() {
-        return mGender;
-    }
-
-    public String getSupervisorPhoneNo() {
-        return et_phone_no.getText().toString();
-    }
-
-    public static String getSupervisorDOB() {
-        return et_supervisor_dob.getText().toString();
-    }
-
-    public String getSupervisorEmail() {
-        return et_email.getText().toString();
-    }
-
-    public String getSupervisorAddress() {
-        return et_address.getText().toString();
-    }
-
-    public String getSupervisorZipcode() {
-        return et_zipcode.getText().toString();
-    }
-
-    private class AddSupervisorAsyncTask extends AsyncTask<Void, Void, String> {
-        final Dialog progressDialog = new Dialog(mContext, R.style.progress_dialog);
-
-        @Override
-        protected void onPreExecute() {
-            progressDialog.setContentView(R.layout.progress_dialog);
-            progressDialog.setCancelable(false);
-            progressDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            TextView msg = (TextView) progressDialog.findViewById(R.id.id_tv_loadingmsg);
-            msg.setText("Please wait ...");
-            progressDialog.setCanceledOnTouchOutside(false);
-            progressDialog.show();
-        }
-
-        @Override
-        protected String doInBackground(Void... params) {
-            // params comes from the execute() call: params[0] is the url.
-            List<NameValuePair> parms = new LinkedList<NameValuePair>();
-
-            parms.add(new BasicNameValuePair(CensusConstants.firstName, gerSupervisorFirstName()));
-            parms.add(new BasicNameValuePair(CensusConstants.lastName, getSupervisorLastName()));
-            parms.add(new BasicNameValuePair(CensusConstants.gender, getSupervisorGender()));
-            parms.add(new BasicNameValuePair(CensusConstants.dob, getSupervisorDOB()));
-            parms.add(new BasicNameValuePair(CensusConstants.phoneNumber, "91" + getSupervisorPhoneNo()));
-            parms.add(new BasicNameValuePair(CensusConstants.aadhaar, getSupervisorAadhaar()));
-            parms.add(new BasicNameValuePair(CensusConstants.emailId, getSupervisorEmail()));
-            parms.add(new BasicNameValuePair(CensusConstants.address, getSupervisorAddress()));
-            parms.add(new BasicNameValuePair(CensusConstants.city_id, mCityId));
-            parms.add(new BasicNameValuePair(CensusConstants.state_id, mStateId));
-            parms.add(new BasicNameValuePair(CensusConstants.country, "india"));
-            parms.add(new BasicNameValuePair(CensusConstants.zipcode, getSupervisorZipcode()));
-            parms.add(new BasicNameValuePair(CensusConstants.userAvatar, mEncodedData));
-            parms.add(new BasicNameValuePair(CensusConstants.imageType, mImageType));
-            parms.add(new BasicNameValuePair(CensusConstants.createdBy, AppData.getString(mContext, CensusConstants.userid)));
-//            Log.d(TAG, "params firstName >>> " + gerSupervisorFirstName());
-//            Log.d(TAG, "params lastName >>> " + getSupervisorLastName());
-//            Log.d(TAG, "params gender >>> " + getSupervisorGender());
-//            Log.d(TAG, "params dob >>> " + getSupervisorDOB());
-//            Log.d(TAG, "params phoneNumber >>> " + getSupervisorPhoneNo());
-//            Log.d(TAG, "params aadhaar >>> " + getSupervisorAadhaar());
-//            Log.d(TAG, "params emailId >>> " + getSupervisorEmail());
-//            Log.d(TAG, "params address >>> " + getSupervisorAddress());
-//            Log.d(TAG, "params zipcode >>> " + getSupervisorZipcode());
-//            Log.d(TAG, "params mEncodedData >>> " + mEncodedData);
-//            Log.d(TAG, "params image type >>> " + mImageType);
-
-            return new ConnectToServer().getDataFromUrl(CensusConstants.BASE_URL + CensusConstants.ADD_SUPERVISOR_URL, parms);//HttpUtils.doPost(map, BureauConstants.BASE_URL+BureauConstants.REGISTER_URL);
-        }
-
-        // onPostExecute displays the results of the AsyncTask.
-        @Override
-        protected void onPostExecute(String result) {
-            final Dialog customDialog = new Dialog(AddSupervisor.this);
-            customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-            customDialog.setContentView(R.layout.simple_alert);
-
-            progressDialog.dismiss();
-
-            try {
-                JSONObject jsonObject = new JSONObject(result);
-                String status = jsonObject.getString("status");
-                String status_code = jsonObject.getString("status_code");
-                String response = jsonObject.getString("response");
-
-                if (status.equals("success") && status_code.equals("1000")) {
-
-                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Success");
-                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
-                    TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                    text.setText("OK");
-
-                    text.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            customDialog.dismiss();
-                            finishAffinity();
-                            Intent intent = new Intent(AddSupervisor.this, HomeActivity.class);
-                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                            startActivity(intent);
-                            overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                        }
-                    });
-                    customDialog.show();
-                }else if (status.equals("success") && status_code.equals("1003")) {
-                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
-                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
-                    TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                    text.setText("OK");
-
-                    text.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            customDialog.dismiss();
-                        }
-                    });
-                    customDialog.show();
-                } else if (status.equals("error") && status_code.equals("1004")) {
-                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
-                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
-                    TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                    text.setText("OK");
-
-                    text.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            customDialog.dismiss();
-                        }
-                    });
-                    customDialog.show();
-                }else if (status.equals("error") && status_code.equals("1005")) {
-                        ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
-                        ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
-                        TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                        text.setText("OK");
-
-                        text.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                customDialog.dismiss();
-                            }
-                        });
-                        customDialog.show();
-                }else {
-                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
-                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
-                    TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                    text.setText("OK");
-
-                    text.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            customDialog.dismiss();
-                        }
-                    });
-                    customDialog.show();
-                }
-            } catch (JSONException jsonException) {
-                jsonException.printStackTrace();
+    private int getPosition(ArrayList<State> mStateList, String state_id) {
+        int pos = 0;
+        for (int i = 0; i < mStateList.size(); i++) {
+            String temp_id = mStateList.get(i).getId();
+            if (temp_id.equals(state_id)){
+                pos = i + 1;
+                break;
             }
         }
-    }
 
-    public class StatesListAsyncTask extends AsyncTask<Void, Void, String> {
-        final Dialog progressDialog = new Dialog(mContext, R.style.progress_dialog);
-
-        @Override
-        protected void onPreExecute() {
-            progressDialog.setContentView(R.layout.progress_dialog);
-            progressDialog.setCancelable(false);
-            progressDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            TextView msg = (TextView) progressDialog.findViewById(R.id.id_tv_loadingmsg);
-            msg.setText("Please wait ...");
-            progressDialog.setCanceledOnTouchOutside(false);
-            progressDialog.show();
-        }
-
-        @Override
-        protected String doInBackground(Void... params) {
-            return new ConnectToServer().getDataFromUrlGETMethod(CensusConstants.BASE_URL + CensusConstants.GET_STATES_URL);
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            final Dialog customDialog = new Dialog(mContext);
-            customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-            customDialog.setContentView(R.layout.simple_alert);
-
-            progressDialog.dismiss();
-            Log.d(TAG, "on postexecute result >>> " + result);
-            try {
-                JSONObject jsonObject = new JSONObject(result);
-                String status = jsonObject.getString("status");
-                String status_code = jsonObject.getString("status_code");
-                String response = jsonObject.getString("response");
-
-                if (status.equals("success") && status_code.equals("1003")) {
-                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
-                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
-                    TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                    text.setText("OK");
-
-                    text.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            customDialog.dismiss();
-                        }
-                    });
-                    customDialog.show();
-                } else if (status.equals("success") && status_code.equals("1000")) {
-                    JSONArray jsonArray = jsonObject.getJSONArray("data");
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject explrObject = jsonArray.getJSONObject(i);
-                        String id = explrObject.getString("state_id");
-                        String name = explrObject.getString("state_name");
-                        mStateList.add(new State(id, name));
-                    }
-
-                    mStateListAdapter.notifyDataSetChanged();
-                }
-            } catch (JSONException jsonException) {
-                jsonException.printStackTrace();
-                ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Alert");
-                ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText("Server not Responding, please try again after sometime.");
-                TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                text.setText("OK");
-
-                text.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        customDialog.dismiss();
-                    }
-                });
-                customDialog.show();
-            }
-        }
+        return pos;
     }
 
     private class GetCityListAsync extends AsyncTask<String, Void, String> {
-        final Dialog progressDialog = new Dialog(mContext, R.style.progress_dialog);
-
         @Override
         protected void onPreExecute() {
-            progressDialog.setContentView(R.layout.progress_dialog);
-            progressDialog.setCancelable(false);
-            progressDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            TextView msg = (TextView) progressDialog.findViewById(R.id.id_tv_loadingmsg);
-            msg.setText("Please wait ...");
-            progressDialog.setCanceledOnTouchOutside(false);
-            progressDialog.show();
         }
 
         @Override
@@ -923,7 +660,6 @@ public class AddSupervisor extends AppCompatActivity {
             customDialog.setContentView(R.layout.simple_alert);
 
             Log.d(TAG, "on postexecute result >>> " + result);
-            progressDialog.dismiss();
             try {
                 JSONObject jsonObject = new JSONObject(result);
                 String status = jsonObject.getString("status");
@@ -953,6 +689,8 @@ public class AddSupervisor extends AppCompatActivity {
                     }
 
                     mCityListAdapter.notifyDataSetChanged();
+                    int pos = getPosition(mCityList, AppData.getString(mContext, CensusConstants.city_id));
+                    spinner_city.setSelection(pos);
                 }
             } catch (JSONException jsonException) {
                 jsonException.printStackTrace();
@@ -970,5 +708,196 @@ public class AddSupervisor extends AppCompatActivity {
                 customDialog.show();
             }
         }
+    }
+
+    private void updateProfile() {
+        new UpdateProfile().execute();
+    }
+
+    private class UpdateProfile extends AsyncTask<Void, Void, String> {
+        final Dialog progressDialog = new Dialog(mContext, R.style.progress_dialog);
+
+        @Override
+        protected void onPreExecute() {
+            progressDialog.setContentView(R.layout.progress_dialog);
+            progressDialog.setCancelable(false);
+            progressDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            TextView msg = (TextView) progressDialog.findViewById(R.id.id_tv_loadingmsg);
+            msg.setText("Please wait ...");
+            progressDialog.setCanceledOnTouchOutside(false);
+            progressDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(Void... params) {
+            // params comes from the execute() call: params[0] is the url.
+            List<NameValuePair> parms = new LinkedList<NameValuePair>();
+
+            String user_role = AppData.getString(mContext, CensusConstants.userRole);
+
+            parms.add(new BasicNameValuePair(CensusConstants.firstName, getFname()));
+            parms.add(new BasicNameValuePair(CensusConstants.lastName, getLname()));
+            parms.add(new BasicNameValuePair(CensusConstants.gender, mGender));
+            parms.add(new BasicNameValuePair(CensusConstants.dob, getDateOfBirth()));
+            parms.add(new BasicNameValuePair(CensusConstants.phoneNumber, AppData.getString(mContext, CensusConstants.phoneNumber)));
+            parms.add(new BasicNameValuePair(CensusConstants.aadhaar, getAadhaar()));
+            parms.add(new BasicNameValuePair(CensusConstants.emailId, getEmail()));
+            parms.add(new BasicNameValuePair(CensusConstants.address, getAddress()));
+            parms.add(new BasicNameValuePair(CensusConstants.city_id, mCityId));
+            parms.add(new BasicNameValuePair(CensusConstants.state_id, mStateId));
+            parms.add(new BasicNameValuePair(CensusConstants.country, AppData.getString(mContext, CensusConstants.country)));
+            parms.add(new BasicNameValuePair(CensusConstants.zipcode, getZipcode()));
+            parms.add(new BasicNameValuePair(CensusConstants.userAvatar, mEncodedData));
+            parms.add(new BasicNameValuePair(CensusConstants.imageType, mImageType));
+            parms.add(new BasicNameValuePair(CensusConstants.userRole, user_role));
+
+            /*Log.d(LOG_TAG, "params firstName >>> " + getFname());
+            Log.d(LOG_TAG, "params lastName >>> " + getLname());
+            Log.d(LOG_TAG, "params gender >>> " + mGender);
+            Log.d(LOG_TAG, "params dob >>> " + getDateOfBirth());
+            Log.d(LOG_TAG, "params phoneNumber >>> " + AppData.getString(mContext, CensusConstants.phoneNumber));
+            Log.d(LOG_TAG, "params emailId >>> " + getEmail());
+            Log.d(LOG_TAG, "params address >>> " + getAddress());
+            Log.d(LOG_TAG, "params zipcode >>> " + getZipcode());
+            Log.d(LOG_TAG, "params mEncodedData >>> " + mEncodedData);
+            Log.d(LOG_TAG, "params image type >>> " + mImageType);*/
+
+            /*String paramString = URLEncodedUtils.format(parms, "utf-8");
+            String url = CensusConstants.BASE_URL + CensusConstants.UPDATE_SUPERVISOR_INFO_URL;
+            url += "?";
+            url += paramString;
+            Log.e(LOG_TAG, "url sending is >>> " + url);*/
+
+            String URL = "";
+
+            String userRole = AppData.getString(mContext, CensusConstants.userRole);
+            if (userRole.equals("admin")) {
+                URL = CensusConstants.BASE_URL + CensusConstants.UPDATE_ADMIN_INFO_URL;
+                parms.add(new BasicNameValuePair("user_id", AppData.getString(mContext, CensusConstants.rolebased_user_id)));
+            }else if (userRole.equals("supervisor")){
+                URL = CensusConstants.BASE_URL + CensusConstants.UPDATE_SUPERVISOR_INFO_URL;
+                parms.add(new BasicNameValuePair("supervisor_id", AppData.getString(mContext, CensusConstants.rolebased_user_id)));
+            }else if (userRole.equals("member")){
+                URL = CensusConstants.BASE_URL + CensusConstants.UPDATE_MEMBER_INFO_URL;
+                parms.add(new BasicNameValuePair("member_id", AppData.getString(mContext, CensusConstants.rolebased_user_id)));
+            }
+
+            return new ConnectToServer().getDataFromUrl(URL, parms);
+        }
+
+        // onPostExecute displays the results of the AsyncTask.
+        @Override
+        protected void onPostExecute(String result) {
+            try {
+                Log.d(TAG, "result >>> " + result);
+                progressDialog.dismiss();
+                JSONObject jsonObject = new JSONObject(result);
+                String status = jsonObject.getString("status");
+
+                String response = jsonObject.getString("response");
+                String status_code = jsonObject.getString("status_code");
+
+                if (status.equals("success")) {
+
+                    if (status.equalsIgnoreCase(CensusConstants.SUCCESS) && status_code.equals("1000")) {
+                        final Dialog customDialog = new Dialog(mContext);
+                        customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                        customDialog.setContentView(R.layout.simple_alert);
+                        ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Success");
+                        ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
+                        TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
+                        text.setText("OK");
+
+                        text.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                customDialog.dismiss();
+                                saveAppData ();
+                                finishAffinity();
+                                Intent intent = new Intent(mContext, HomeActivity.class);
+                                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                                startActivity(intent);
+                                overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
+                            }
+                        });
+                        customDialog.show();
+                    } else if (status.equalsIgnoreCase(CensusConstants.SUCCESS) && status_code.equals("1001")) {
+                        final Dialog customDialog = new Dialog(mContext);
+                        customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                        customDialog.setContentView(R.layout.simple_alert);
+                        ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Alert");
+                        ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
+                        TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
+                        text.setText("OK");
+
+                        text.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                customDialog.dismiss();
+                                Intent intent = new Intent(mContext, HomeActivity.class);
+                                startActivity(intent);
+                                overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
+                            }
+                        });
+                        customDialog.show();
+                    }
+                }else if (status.equals("error")) {
+                    final Dialog customDialog = new Dialog(mContext);
+                    customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                    customDialog.setContentView(R.layout.simple_alert);
+                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
+                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
+                    TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
+                    text.setText("OK");
+
+                    text.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            customDialog.dismiss();
+                            Intent intent = new Intent(mContext, HomeActivity.class);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
+                        }
+                    });
+                    customDialog.show();
+                }
+            } catch (JSONException jsonException) {
+                jsonException.printStackTrace();
+
+                final Dialog customDialog = new Dialog(mContext);
+                customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                customDialog.setContentView(R.layout.simple_alert);
+                ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Alert");
+                ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText("Server Not Responding Please try again Later.");
+                TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
+                text.setText("OK");
+
+                text.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        customDialog.dismiss();
+                        Intent intent = new Intent(mContext, HomeActivity.class);
+                        startActivity(intent);
+                        overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
+                    }
+                });
+                customDialog.show();
+            }
+        }
+    }
+
+    private void saveAppData() {
+        AppData.saveString(mContext, CensusConstants.firstName, getFname());
+        AppData.saveString(mContext, CensusConstants.lastName, getLname());
+        AppData.saveString(mContext, CensusConstants.gender, mGender);
+        AppData.saveString(mContext, CensusConstants.dob, getDateOfBirth());
+        AppData.saveString(mContext, CensusConstants.aadhaar, getAadhaar());
+        AppData.saveString(mContext, CensusConstants.emailId, getEmail());
+        AppData.saveString(mContext, CensusConstants.address, getAddress());
+        AppData.saveString(mContext, CensusConstants.city_id, mCityId);
+        AppData.saveString(mContext, CensusConstants.state_id, mStateId);
+        AppData.saveString(mContext, CensusConstants.zipcode, getZipcode());
+        AppData.saveString(mContext, CensusConstants.userAvatar, mEncodedData);
+        AppData.saveString(mContext, CensusConstants.imageType, mImageType);
     }
 }

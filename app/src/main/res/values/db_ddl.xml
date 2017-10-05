@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<string name="sql_ddl">
+"<![CDATA[CREATE  TABLE IF NOT EXISTS  `android_metadata` (`locale` TEXT DEFAULT 'en_US');
+    INSERT INTO `android_metadata` VALUES ('en_US');
+CREATE TABLE IF NOT EXISTS `MemberInfo` (`id` INTEGER NOT NULL PRIMARY KEY,`first_name` VARCHAR(50), `last_name` VARCHAR(45) NOT NULL,`phone_number` VARCHAR(50) NOT NULL,`aadhaar` VARCHAR(45),`email` VARCHAR(50), `address` VARCHAR(200),`gender` VARCHAR(50),`age` VARCHAR,`image_url` VARCHAR,`image` BLOB,`relationship` VARCHAR, `family_size` VARCHAR(10),`zipcode` VARCHAR(10),`dob` VARCHAR(50),`familyHeadId` VARCHAR,`isFamilyHead` VARCHAR, `isSynced` VARCHAR, `city_id` VARCHAR,`state_id` VARCHAR, `country` VARCHAR, `image_type` VARCHAR, `user_role` VARCHAR, `role_based_user_id` VARCHAR, `created_by` VARCHAR, UNIQUE(`aadhaar`));
+CREATE TABLE IF NOT EXISTS `SupervisorInfo` (`id` INTEGER NOT NULL PRIMARY KEY,`first_name` VARCHAR(50), `last_name` VARCHAR(45) NOT NULL,`phone_number` VARCHAR(50) NOT NULL, `aadhaar` VARCHAR(45), `email` VARCHAR(50), `address` VARCHAR(200),`gender` VARCHAR(50),`age` VARCHAR,`image_url` VARCHAR,`image` BLOB, `zipcode` VARCHAR(10),`dob` VARCHAR(50), `member_count` VARCHAR(50), `isSynced` VARCHAR, `city_id` VARCHAR,`state_id` VARCHAR, `country` VARCHAR, `image_type` VARCHAR, `user_role` VARCHAR, `created_by` VARCHAR, UNIQUE(`aadhaar`));
+CREATE TABLE IF NOT EXISTS `StatesInfo` (`id` INTEGER NOT NULL PRIMARY KEY,`state_id` VARCHAR(50),`state_name` VARCHAR(50), UNIQUE(`state_id`));
+CREATE TABLE IF NOT EXISTS `RelationsInfo` (`id` INTEGER NOT NULL PRIMARY KEY,`relation_name` VARCHAR(50),`relation_id` VARCHAR(50), UNIQUE(`relation_id`));
+CREATE TABLE IF NOT EXISTS `CityInfo` (`id` INTEGER NOT NULL PRIMARY KEY,`city_id` VARCHAR(50),`city_name` VARCHAR(50), `state_id` VARCHAR, UNIQUE(`city_id`));
+]]>"
+</string>
+</resources>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

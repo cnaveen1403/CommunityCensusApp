@@ -1,13 +1,11 @@
-package com.zolipe.communitycensus;
+package com.zolipe.communitycensus.activity;
 
 import android.Manifest;
-import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -25,7 +23,6 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -47,21 +44,25 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import com.zolipe.communitycensus.R;
 import com.zolipe.communitycensus.adapter.ListViewAdapter;
 import com.zolipe.communitycensus.adapter.StateListAdapter;
 import com.zolipe.communitycensus.app.AppData;
+import com.zolipe.communitycensus.database.DbAction;
+import com.zolipe.communitycensus.database.DbAsyncParameter;
+import com.zolipe.communitycensus.database.DbAsyncTask;
+import com.zolipe.communitycensus.database.DbParameter;
 import com.zolipe.communitycensus.model.FamilyHead;
 import com.zolipe.communitycensus.model.State;
 import com.zolipe.communitycensus.permissions.PermissionsActivity;
 import com.zolipe.communitycensus.permissions.PermissionsChecker;
 import com.zolipe.communitycensus.util.CensusConstants;
+import com.zolipe.communitycensus.util.CommonUtils;
 import com.zolipe.communitycensus.util.ConnectToServer;
 import com.zolipe.communitycensus.util.SelectDocument;
 
 import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -74,7 +75,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import fr.ganfra.materialspinner.MaterialSpinner;
@@ -107,11 +107,12 @@ public class AddMember extends AppCompatActivity {
     private static final int REQUEST_GALLERY = 1002;
     private static final int CHECK_PERMISSION = 1003;
 
-    String mGender = "male", mStateId = "-1", mCityId = "-1", mRelationshipId = "-1";
-    private String mEncodedData = CensusConstants.mBasicAvatarData;
-    private static String mImageType;
+    String mGender = "male", mStateId = "0", mCityId = "-1", mRelationshipId = "-1";
+    private String mEncodedData = "";
+    private static String mImageType = "jpeg";
 
-    private String mFamilyHeadId = "-1";
+    private String mHeadAadhar = "-1";
+    FamilyHead mFamilyHead;
 
     private static List<FamilyHead> mFamilyHeadList = new ArrayList<>();
     private static ListViewAdapter mListViewAdapter;
@@ -139,9 +140,6 @@ public class AddMember extends AppCompatActivity {
 
     private void init() {
         mContext = AddMember.this;
-        getFamilyHeadList("");
-        getRelationShipList();
-        new StatesListAsyncTask().execute();
         initStateSpinner();
         initCitySpinner();
         initRelationsSpinner();
@@ -169,9 +167,10 @@ public class AddMember extends AppCompatActivity {
             }
         });
 
+        //Initialize Permission Checker
         checker = new PermissionsChecker(this);
-//        SimpleDateFormat dateFormatter = new SimpleDateFormat("dd-MM-yyyy", Locale.US);
 
+        //Define the Id's for UI variables
         et_first_name = (EditText) findViewById(R.id.et_first_name);
         et_last_name = (EditText) findViewById(R.id.et_last_name);
         et_phone_no = (EditText) findViewById(R.id.et_phone_no);
@@ -187,19 +186,20 @@ public class AddMember extends AppCompatActivity {
         cb_family_head = (CheckBox) findViewById(R.id.cb_family_head);
         btn_add_member = (Button) findViewById(R.id.btn_add_member);
 
+        //Checkbox IsFamilyHead Click Action
         cb_family_head.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                Log.e(TAG, "onCheckedChanged: isChecked >>>>> " + isChecked);
                 if (isChecked) {
-                    spinner_relations.setVisibility(View.GONE);
                     mSearchableSpinner.setVisibility(View.GONE);
+                    spinner_relations.setVisibility(View.GONE);
+                } else {
+                    spinner_relations.setVisibility(View.VISIBLE);
+                    mSearchableSpinner.setVisibility(View.VISIBLE);
                     //ToDo remove hardcode value for this scenario
                     mRelationshipId = "100";
-                    getFamilyHeadList("");
-                } else {
-                    mSearchableSpinner.setVisibility(View.VISIBLE);
-                    spinner_relations.setVisibility(View.VISIBLE);
-//                    mSearchableSpinner.setSelectedItem(-1);
+                    getFamilyHeads();
                 }
             }
         });
@@ -281,7 +281,13 @@ public class AddMember extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (isValidForm()) {
-                    new AddMemberAsyncTask().execute();
+                    if (CommonUtils.isActiveNetwork(mContext)) {
+                        Log.e(TAG, "onClick: isActive Network");
+                        new AddMemberAsyncTask().execute();
+                    } else {
+                        Log.e(TAG, "onClick: Network inactive >>>>>>>>>>>>>>");
+                        saveToLocalDB(true, "");
+                    }
                 }
             }
         });
@@ -298,6 +304,109 @@ public class AddMember extends AppCompatActivity {
                 return true;
             }
         });
+    }
+
+    private void saveToLocalDB(final Boolean isOffline, final String img_url) {
+
+        String isFamilyHead = (isFamilyHead() == true) ? "yes" : "no";
+        String familyHeadId = (isFamilyHead() == true) ? getMemberAadhaar() : mHeadAadhar;
+        String relationshipId = (isFamilyHead() == true) ? "100" : mRelationshipId;
+        String roleBasedUserId = AppData.getString(AddMember.this, CensusConstants.rolebased_user_id);
+        String createdBy = AppData.getString(AddMember.this, CensusConstants.userid);
+
+        final DbAsyncTask dbATask = new DbAsyncTask(AddMember.this, false, null);
+        DbParameter dbParams_duty = new DbParameter();
+
+        ArrayList<Object> parms = new ArrayList<Object>();
+        parms.add(getMemberFirstName());
+        parms.add(getMemberLastName());
+        parms.add(getMemberPhoneNumber());
+        parms.add(getMemberEmailId());
+        parms.add(getMemberAddress());
+        parms.add(getGender());
+        parms.add(CommonUtils.calculateAge(getMemberDateOfBirth()));
+        parms.add(img_url);
+        parms.add((isOffline) ? mEncodedData : "");
+        parms.add(relationshipId);
+        //TODO : Calculate Family Size and update
+        parms.add("1");
+        parms.add(getMemberZipcode());
+        parms.add(getMemberDateOfBirth());
+        parms.add(familyHeadId);
+        parms.add(isFamilyHead);
+        parms.add(isOffline ? "no" : "yes");
+        parms.add(mCityId);
+        parms.add(mStateId);
+        parms.add("india");
+        parms.add(mImageType);
+        parms.add("member");
+        parms.add(roleBasedUserId);
+        parms.add(createdBy);
+        parms.add(getMemberAadhaar());
+
+        dbParams_duty.addParamterList(parms);
+
+        final DbAsyncParameter dbAsyncParam_duty = new DbAsyncParameter(R.string.sql_insert_members,
+                DbAsyncTask.QUERY_TYPE_BULK_UPDATE, dbParams_duty, null);
+
+        DbAction dbAction_duty = new DbAction() {
+            @Override
+            public void execPreDbAction() {
+            }
+
+            @Override
+            public void execPostDbAction() {
+
+
+                final Dialog customDialog = new Dialog(mContext);
+                customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                customDialog.setContentView(R.layout.simple_alert);
+                customDialog.setCancelable(false);
+
+                String message = isOffline ? "No Internet Connectivity !!! your data saved successfully in local db."
+                        : "Member has been added successfully.";
+                ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Success");
+                ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(message);
+                TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
+                text.setText("OK");
+
+                text.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        customDialog.dismiss();
+                        if (isFamilyHead()) {
+                            mFamilyHead = new FamilyHead(getMemberAadhaar(), getMemberFirstName(), getMemberLastName(),
+                                    getMemberPhoneNumber(), getMemberAadhaar(), getMemberEmailId(),
+                                    getMemberAddress(), getGender(), img_url, CommonUtils.calculateAge(getMemberDateOfBirth()),
+                                    "100", "0", getMemberZipcode(),
+                                    getMemberDateOfBirth(), getMemberAadhaar(), "yes", "yes");
+
+                            finish();
+                            Intent intent = new Intent(AddMember.this, FamilyDetailsActivity.class);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                            intent.putExtra("family_head", mFamilyHead);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.slide_from_right, R.anim.slide_to_left);
+                        } else {
+                            finishAffinity();
+                            Intent intent = new Intent(AddMember.this, HomeActivity.class);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                            startActivity(intent);
+                            overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
+                        }
+                    }
+                });
+                customDialog.show();
+            }
+        };
+
+        dbAsyncParam_duty.setDbAction(dbAction_duty);
+
+        try {
+            dbATask.execute(dbAsyncParam_duty);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void hideKeyboard() {
@@ -360,7 +469,7 @@ public class AddMember extends AppCompatActivity {
         public void onItemSelected(View view, int position, long id) {
 //            Log.d(TAG, "head id >> " + mFamilyHeadList.get(position).getId());
 //            Log.d(TAG, "head id >> " + mFamilyHeadList.get(position).getFirst_name());
-            mFamilyHeadId = mFamilyHeadList.get(position).getId();
+            mHeadAadhar = mFamilyHeadList.get(position).getAadhaar();
 //            String headName = mFamilyHeadList.get(position).getName();
 //            Toast.makeText(mContext, "Item on position " + position + " : " + mListViewAdapter.getItem(position) + " Selected", Toast.LENGTH_SHORT).show();
         }
@@ -373,6 +482,7 @@ public class AddMember extends AppCompatActivity {
 
     private void initRelationsSpinner() {
         spinner_relations = (MaterialSpinner) findViewById(R.id.spinner_relations);
+        mRelationsList = CommonUtils.getRelationsList(mContext);
         mRelationsAdapter = new StateListAdapter(mContext, mRelationsList);
         spinner_relations.setAdapter(mRelationsAdapter);
         spinner_relations.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -395,20 +505,21 @@ public class AddMember extends AppCompatActivity {
     }
 
     private void initStateSpinner() {
+        mStateList = CommonUtils.getStatesList(mContext);
         spinner_state = (MaterialSpinner) findViewById(R.id.spinner_state);
         mStateListAdapter = new StateListAdapter(mContext, mStateList);
+        mStateListAdapter.notifyDataSetChanged();
         spinner_state.setAdapter(mStateListAdapter);
         spinner_state.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
-//                Log.d(TAG, "Item On Position >> "+ position);
                 if (position != -1) {
                     String state_id = mStateList.get(position).getId();
                     mStateId = state_id;
-                    new GetCityListAsync().execute(state_id);
                     resetCitySpinner();
-//                    Log.d(TAG, "Item on position " + position + " : " + state_id + " Selected");
-//                    Log.d(TAG, "Item on position " + position + " : " + mStateList.get(position).getName() + " Selected");
+                    prepareCityList();
+                    Log.e(TAG, "onItemSelected: mCityList >>> " + mCityList.toString());
+                    mCityListAdapter.notifyDataSetChanged();
                 }
             }
 
@@ -429,7 +540,9 @@ public class AddMember extends AppCompatActivity {
 
     private void initCitySpinner() {
         spinner_city = (MaterialSpinner) findViewById(R.id.spinner_city);
+        prepareCityList();
         mCityListAdapter = new StateListAdapter(mContext, mCityList);
+        mCityListAdapter.notifyDataSetChanged();
         spinner_city.setAdapter(mCityListAdapter);
         spinner_city.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -450,18 +563,70 @@ public class AddMember extends AppCompatActivity {
         });
     }
 
-    private void getFamilyHeadList(String search) {
-        new GetFamilyHeadsAsyncTask().execute(search);
-    }
+    private void prepareCityList() {
+        final DbAsyncTask dbATask = new DbAsyncTask(mContext, false, null);
+        DbParameter dbParams = new DbParameter();
 
-    private void getRelationShipList() {
-        new GetRelationsListAsyncTask().execute();
+        ArrayList<Object> parms = new ArrayList<Object>();
+        parms.add(mStateId);
+        dbParams.addParamterList(parms);
+        final DbAsyncParameter dbAsyncParam = new DbAsyncParameter(R.string.sql_select_cities, DbAsyncTask.QUERY_TYPE_CURSOR, dbParams, null);
+
+        DbAction dbAction = new DbAction() {
+            @Override
+            public void execPreDbAction() {
+            }
+
+            @Override
+            public void execPostDbAction() {
+                Cursor cur = dbAsyncParam.getQueryCursor();
+                if (cur == null) {
+                    return;
+                }
+
+                if (cur.moveToFirst()) {
+                    do {
+                        String id = cur.getString(cur.getColumnIndex("city_id"));
+                        String name = cur.getString(cur.getColumnIndex("city_name"));
+
+                        if (mCityList.size() == 0) {
+                            mCityList.add(new State(id, name));
+                        } else {
+                            boolean bStatus = true;
+                            Iterator<State> iter = mCityList.iterator();
+                            while (iter.hasNext()) {
+//                                    Log.d(TAG, "============ Inside if condition iterator ============= ");
+                                State obj = iter.next();
+                                if (id.equals(obj.getId())) {
+                                    bStatus = false;
+                                }
+                            }
+                            Log.d(TAG, "bStatus >>>> " + bStatus);
+                            if (bStatus) {
+//                                Log.d("SuperFragment", "************ Object Has been added successfully ************ ");
+                                mCityList.add(new State(id, name));
+                            }
+                        }
+                    }
+                    while (cur.moveToNext());
+                    mCityListAdapter.notifyDataSetChanged();
+                }
+                cur.close();
+            }
+        };
+
+        dbAsyncParam.setDbAction(dbAction);
+
+        try {
+            dbATask.execute(dbAsyncParam);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void startPermissionsActivity(String[] permission) {
         PermissionsActivity.startActivityForResult(this, CHECK_PERMISSION, permission);
     }
-
 
     private void openFileChooserDialog() {
         // Create custom dialog object
@@ -519,6 +684,11 @@ public class AddMember extends AppCompatActivity {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         // TODO Auto-generated method stub
         super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == 0 && resultCode == 0) {
+            openFileChooserDialog();
+        }
+
         Uri correctedUri = null;
         if (resultCode == RESULT_OK) {
             String realPath;
@@ -555,10 +725,6 @@ public class AddMember extends AppCompatActivity {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            } else if (requestCode == CHECK_PERMISSION){
-                Log.e(TAG, "onActivityResult: requestCode >>>>> " + requestCode);
-                Log.e(TAG, "onActivityResult: resultCode >>>>> " + resultCode);
-                Log.e(TAG, "onActivityResult: data >>>>> " + data);
             }
         }
     }
@@ -647,11 +813,11 @@ public class AddMember extends AppCompatActivity {
 
         public void onDateSet(DatePicker view, int year, int month, int day) {
             // Do something with the chosen date
-            String selectedDate = year + "-" + ((month + 1)<10?"0"+(month+1):(month+1)) + "-" + day;
+            String selectedDate = year + "-" + ((month + 1) < 10 ? "0" + (month + 1) : (month + 1)) + "-" + day;
             et_member_dob.setError(null);
             et_member_dob.setText(selectedDate);
             et_aadhaar.requestFocus();
-            validateDOB ();
+            validateDOB();
         }
     }
 
@@ -665,7 +831,7 @@ public class AddMember extends AppCompatActivity {
     private static boolean isValidDateOfBirth(String dob) {
         Date todaysDate = new Date();
         String formattedDate = new SimpleDateFormat("yyyy-MM-dd").format(todaysDate);
-        return ((formattedDate.compareTo(dob) < 0) ? false:true );
+        return ((formattedDate.compareTo(dob) < 0) ? false : true);
     }
 
     private Boolean isFamilyHead() {
@@ -678,9 +844,9 @@ public class AddMember extends AppCompatActivity {
         return isFamilyHead;
     }
 
-    public void callAsync(String text) {
+    /*public void callAsync(String text) {
         new GetFamilyHeadsAsyncTask().execute(text);
-    }
+    }*/
 
     private String getMemberFirstName() {
         return et_first_name.getText().toString();
@@ -719,7 +885,7 @@ public class AddMember extends AppCompatActivity {
     }
 
     private String getFamilyHeadId() {
-        return mFamilyHeadId;
+        return mHeadAadhar;
     }
 
     private boolean isValidForm() {
@@ -759,7 +925,7 @@ public class AddMember extends AppCompatActivity {
             bStatus = false;
             et_email.requestFocus();
             et_email.setError("Please enter valid email");
-        }else if (!getMemberEmailId().equals("") && !getMemberEmailId().matches(emailPattern)) {
+        } else if (!getMemberEmailId().equals("") && !getMemberEmailId().matches(emailPattern)) {
             bStatus = false;
             et_email.requestFocus();
             et_email.setError("Please enter valid email");
@@ -825,15 +991,14 @@ public class AddMember extends AppCompatActivity {
             // params comes from the execute() call: params[0] is the url.
             List<NameValuePair> parms = new LinkedList<NameValuePair>();
 
-            String userRole = AppData.getString(mContext, CensusConstants.userRole);
-
             if (isFamilyHead()) {
                 parms.add(new BasicNameValuePair(CensusConstants.isFamilyHead, "yes"));
                 parms.add(new BasicNameValuePair(CensusConstants.relationshipId, "100"));
+                parms.add(new BasicNameValuePair(CensusConstants.head_aadhar_number, getMemberAadhaar()));
             } else {
                 parms.add(new BasicNameValuePair(CensusConstants.isFamilyHead, "no"));
-                parms.add(new BasicNameValuePair(CensusConstants.familyHeadId, mFamilyHeadId));
                 parms.add(new BasicNameValuePair(CensusConstants.relationshipId, mRelationshipId));
+                parms.add(new BasicNameValuePair(CensusConstants.head_aadhar_number, mHeadAadhar));
             }
             parms.add(new BasicNameValuePair(CensusConstants.firstName, getMemberFirstName()));
             parms.add(new BasicNameValuePair(CensusConstants.lastName, getMemberLastName()));
@@ -880,11 +1045,15 @@ public class AddMember extends AppCompatActivity {
                 String response = jsonObject.getString("response");
 
                 if (status.equals("success") && status_code.equals("1000")) {
-                    final String member_id = jsonObject.getString("member_id");
                     final String image_url = jsonObject.getString("image_url");
 
-                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Success");
-                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText("Member has been added successfully.");
+                    /*
+                    * Save the succesfully recorded record to local db
+                    * */
+                    saveToLocalDB(false, image_url);
+                } else if (status.equals("error") && status_code.equals("1003")) {
+                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
+                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
                     TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
                     text.setText("OK");
 
@@ -892,35 +1061,23 @@ public class AddMember extends AppCompatActivity {
                         @Override
                         public void onClick(View v) {
                             customDialog.dismiss();
-                            if (isFamilyHead()) {
-                                finish();
-                                Intent intent = new Intent(AddMember.this, FamilyDetailsActivity.class);
-                                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//                                intent.putExtra("member_id",member_id);
-
-                                intent.putExtra("member_id", member_id);
-                                /*intent.putExtra("image_url", image_url);
-                                intent.putExtra(CensusConstants.firstName, getMemberFirstName());
-                                intent.putExtra(CensusConstants.lastName, getMemberLastName());
-                                intent.putExtra(CensusConstants.gender, getGender());
-                                intent.putExtra(CensusConstants.dob, getMemberDateOfBirth());
-                                intent.putExtra(CensusConstants.phoneNumber, getMemberPhoneNumber());
-                                intent.putExtra(CensusConstants.emailId, getMemberEmailId());
-                                intent.putExtra(CensusConstants.address, getMemberAddress());
-                                intent.putExtra(CensusConstants.zipcode, getMemberZipcode());*/
-                                startActivity(intent);
-                                overridePendingTransition(R.anim.slide_from_right, R.anim.slide_to_left);
-                            } else {
-                                finishAffinity();
-                                Intent intent = new Intent(AddMember.this, HomeActivity.class);
-                                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                                startActivity(intent);
-                                overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                            }
                         }
                     });
                     customDialog.show();
-                }else if (status.equals("success") && status_code.equals("1003")) {
+                } else if (status.equals("error") && status_code.equals("1004")) {
+                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
+                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
+                    TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
+                    text.setText("OK");
+
+                    text.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            customDialog.dismiss();
+                        }
+                    });
+                    customDialog.show();
+                } else if (status.equals("error") && status_code.equals("1005")) {
                     ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
                     ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
                     TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
@@ -958,11 +1115,6 @@ public class AddMember extends AppCompatActivity {
                     @Override
                     public void onClick(View v) {
                         customDialog.dismiss();
-                        finishAffinity();
-                        Intent intent = new Intent(AddMember.this, HomeActivity.class);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        startActivity(intent);
-                        overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
                     }
                 });
                 customDialog.show();
@@ -970,385 +1122,91 @@ public class AddMember extends AppCompatActivity {
         }
     }
 
-    private class GetFamilyHeadsAsyncTask extends AsyncTask<String, Void, String> {
-        final Dialog progressDialog = new Dialog(mContext, R.style.progress_dialog);
+    private void getFamilyHeads() {
+        final DbAsyncTask dbATask = new DbAsyncTask(mContext, false, null);
+        DbParameter dbParams = new DbParameter();
+        Log.e(TAG, "getFamilyHeads: inside the offline fetch");
+        ArrayList<Object> parms = new ArrayList<Object>();
+        parms.add("yes");
+        dbParams.addParamterList(parms);
 
-        @Override
-        protected void onPreExecute() {
-            progressDialog.setContentView(R.layout.progress_dialog);
-            progressDialog.setCancelable(false);
-            progressDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            TextView msg = (TextView) progressDialog.findViewById(R.id.id_tv_loadingmsg);
-            msg.setText("Please wait ...");
-            progressDialog.setCanceledOnTouchOutside(false);
-            progressDialog.show();
-        }
+        final DbAsyncParameter dbAsyncParam = new DbAsyncParameter(R.string.sql_select_family_heads,
+                DbAsyncTask.QUERY_TYPE_CURSOR, dbParams, null);
+        DbAction dbAction = new DbAction() {
 
-        @Override
-        protected String doInBackground(String... params) {
-            // params comes from the execute() call: params[0] is the url.
-            List<NameValuePair> parms = new LinkedList<NameValuePair>();
-            String searchText = params[0];
-            parms.add(new BasicNameValuePair(CensusConstants.search_text, searchText));
-            parms.add(new BasicNameValuePair(CensusConstants.userid, AppData.getString(mContext, CensusConstants.userid)));
-            parms.add(new BasicNameValuePair("rolebased_user_id", AppData.getString(mContext, CensusConstants.rolebased_user_id)));
-            parms.add(new BasicNameValuePair("user_role", AppData.getString(mContext, CensusConstants.userRole)));
-            return new ConnectToServer().getDataFromUrl(CensusConstants.BASE_URL + CensusConstants.FAMILY_HEADS_LIST_URL, parms);//HttpUtils.doPost(map, BureauConstants.BASE_URL+BureauConstants.REGISTER_URL);
-        }
+            @Override
+            public void execPreDbAction() {
+            }
 
-        // onPostExecute displays the results of the AsyncTask.
-        @Override
-        protected void onPostExecute(String result) {
-            final Dialog customDialog = new Dialog(mContext);
-            customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-            customDialog.setContentView(R.layout.simple_alert);
-            customDialog.setCancelable(false);
+            @Override
+            public void execPostDbAction() {
+                Cursor cur = dbAsyncParam.getQueryCursor();
+                if (cur == null) {
+                    return;
+                }
+                Log.e(TAG, "execPostDbAction: cur count >>>>>>>>>>>>> " + cur.getCount());
+                if (cur.moveToFirst()) {
+                    do {
+                        try {
+                            String headId = cur.getString(cur.getColumnIndex("familyHeadId"));
+                            String first_name = cur.getString(cur.getColumnIndex("first_name"));
+                            String last_name = cur.getString(cur.getColumnIndex("last_name"));
+                            String phone_number = cur.getString(cur.getColumnIndex("phone_number"));
+                            String aadhaar = cur.getString(cur.getColumnIndex("aadhaar"));
+                            String email = cur.getString(cur.getColumnIndex("email"));
+                            String address = cur.getString(cur.getColumnIndex("address"));
+                            String gender = cur.getString(cur.getColumnIndex("gender"));
+                            String image_url = cur.getString(cur.getColumnIndex("image_url"));
+                            String age = cur.getString(cur.getColumnIndex("age"));
+                            String relationship = cur.getString(cur.getColumnIndex("relationship"));
+                            String size = cur.getString(cur.getColumnIndex("family_size"));
+                            String zipcode = cur.getString(cur.getColumnIndex("zipcode"));
+                            String dob = cur.getString(cur.getColumnIndex("dob"));
+                            String familyHeadId = cur.getString(cur.getColumnIndex("familyHeadId"));
+                            String isFamilyHead = cur.getString(cur.getColumnIndex("isFamilyHead"));
+                            String isSynced = cur.getString(cur.getColumnIndex("isSynced"));
 
-            progressDialog.dismiss();
-            Log.d(TAG, "family head list result >> " + result);
-            try {
-                JSONObject jsonObject = new JSONObject(result);
-                String status = jsonObject.getString("status");
-                String status_code = jsonObject.getString("status_code");
-                String response = jsonObject.getString("response");
-
-                if (status.equals("success") && status_code.equals("1003")) {
-
-                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
-                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
-                    TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                    text.setText("OK");
-
-                    text.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            customDialog.dismiss();
-                        }
-                    });
-                    customDialog.show();
-                } else if (status.equals("success") && status_code.equals("1000")) {
-                    JSONArray jsonArray = jsonObject.getJSONArray("data");
-                    for (int i = 0; i < jsonArray.length(); i++) {
-
-                        JSONObject explrObject = jsonArray.getJSONObject(i);
-                        String member_id = explrObject.getString("member_id");
-                        String first_name = explrObject.getString("first_name");
-                        String last_name = explrObject.getString("last_name");
-                        String phone_number = explrObject.getString("phone_number");
-                        String aadhaar = explrObject.getString("aadhar_number");
-                        String email = explrObject.getString("email");
-                        String address = explrObject.getString("address");
-                        String gender = explrObject.getString("gender");
-                        String image_url = explrObject.getString("image_url");
-                        String age = explrObject.getString("age");
-                        String zipcode = explrObject.getString("zipcode");
-                        String relationship = explrObject.getString("relationship");
-                        String size = explrObject.getString("member_count");
-                        String dob = explrObject.getString("dob");
-                        String familyHeadId = explrObject.getString("family_head_id");
-                        String isFamilyHead = explrObject.getString("isfamily_head");
-
-//                        Log.d(TAG, "FamilyHeadList Id >> " + headId);
-
-                        if (mFamilyHeadList.size() == 0) {
-                            mFamilyHeadList.add(new FamilyHead(member_id, first_name, last_name,
-                                    phone_number, aadhaar, email,
-                                    address, gender, image_url, age, relationship, size, zipcode
-                                    , dob, familyHeadId, isFamilyHead));
-                        } else {
-                            boolean bStatus = true;
-                            Iterator<FamilyHead> iter = mFamilyHeadList.iterator();
-                            while (iter.hasNext()) {
-                                Log.d(TAG, "============ Inside if condition iterator ============= ");
-                                FamilyHead obj = iter.next();
-//                                Log.d(TAG, "supervisorId >>>>>>> " + headId);
-//                                Log.d(TAG, "obj.getId() >>>>>>>> " + obj.getId());
-//                                Log.d(TAG, "Compraring Id >>>>>> " + headId.equals(obj.getId()));
-                                if (member_id.equals(obj.getId())) {
-                                    bStatus = false;
-                                }
-                            }
-                            Log.d(TAG, "bStatus >>>> " + bStatus);
-                            if (bStatus) {
-//                                Log.d("SuperFragment", "************ Object Has been added successfully ************ ");
-                                mFamilyHeadList.add(new FamilyHead(member_id, first_name, last_name,
+                            if (mFamilyHeadList.size() == 0) {
+                                mFamilyHeadList.add(new FamilyHead(headId, first_name, last_name,
                                         phone_number, aadhaar, email,
                                         address, gender, image_url, age, relationship, size, zipcode
-                                        , dob, familyHeadId, isFamilyHead));
+                                        , dob, familyHeadId, isFamilyHead, isSynced));
+                            } else {
+                                boolean bStatus = true;
+                                Iterator<FamilyHead> iter = mFamilyHeadList.iterator();
+                                while (iter.hasNext()) {
+                                    Log.d(TAG, "============ Inside if condition iterator ============= ");
+                                    FamilyHead obj = iter.next();
+                                    if (aadhaar.equals(obj.getAadhaar())) {
+                                        bStatus = false;
+                                    }
+                                }
+                                Log.d(TAG, "bStatus >>>> " + bStatus);
+                                if (bStatus) {
+                                    mFamilyHeadList.add(new FamilyHead(headId, first_name, last_name,
+                                            phone_number, aadhaar, email,
+                                            address, gender, image_url, age, relationship, size, zipcode
+                                            , dob, familyHeadId, isFamilyHead, isSynced));
+                                }
                             }
+                        } catch (Exception e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
                         }
                     }
+                    while (cur.moveToNext());
                     mListViewAdapter.notifyDataSetChanged();
-                } else if (status.equals("success") && status_code.equals("1001")) {
-                    mFamilyHeadList.clear();
-                    mListViewAdapter.notifyDataSetChanged();
                 }
-            } catch (JSONException jsonException) {
-                jsonException.printStackTrace();
-                ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
-                ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText("failed to fetch Family head list. Server not responding please try again after sometime.");
-                TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                text.setText("OK");
-
-                text.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        customDialog.dismiss();
-                        finishAffinity();
-                        Intent intent = new Intent(AddMember.this, HomeActivity.class);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        startActivity(intent);
-                        overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                    }
-                });
-                customDialog.show();
+                cur.close();
             }
-        }
-    }
+        };
 
-    public class StatesListAsyncTask extends AsyncTask<Void, Void, String> {
-        final Dialog progressDialog = new Dialog(mContext, R.style.progress_dialog);
+        dbAsyncParam.setDbAction(dbAction);
 
-        @Override
-        protected void onPreExecute() {
-            progressDialog.setContentView(R.layout.progress_dialog);
-            progressDialog.setCancelable(false);
-            progressDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            TextView msg = (TextView) progressDialog.findViewById(R.id.id_tv_loadingmsg);
-            msg.setText("Please wait ...");
-            progressDialog.setCanceledOnTouchOutside(false);
-            progressDialog.show();
-        }
-
-        @Override
-        protected String doInBackground(Void... params) {
-            return new ConnectToServer().getDataFromUrlGETMethod(CensusConstants.BASE_URL + CensusConstants.GET_STATES_URL);
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            progressDialog.dismiss();
-            final Dialog customDialog = new Dialog(mContext);
-            customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-            customDialog.setContentView(R.layout.simple_alert);
-            customDialog.setCancelable(false);
-
-            Log.d(TAG, "on postexecute result >>> " + result);
-            try {
-                JSONObject jsonObject = new JSONObject(result);
-                String status = jsonObject.getString("status");
-                String status_code = jsonObject.getString("status_code");
-                String response = jsonObject.getString("response");
-
-                if (status.equals("success") && status_code.equals("1003")) {
-                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
-                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
-                    TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                    text.setText("OK");
-
-                    text.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            customDialog.dismiss();
-                        }
-                    });
-                    customDialog.show();
-                } else if (status.equals("success") && status_code.equals("1000")) {
-                    JSONArray jsonArray = jsonObject.getJSONArray("data");
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject explrObject = jsonArray.getJSONObject(i);
-                        String id = explrObject.getString("state_id");
-                        String name = explrObject.getString("state_name");
-                        mStateList.add(new State(id, name));
-                    }
-
-                    mStateListAdapter.notifyDataSetChanged();
-                }
-            } catch (JSONException jsonException) {
-                jsonException.printStackTrace();
-                ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Alert");
-                ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText("Server not Responding, please try again after sometime.");
-                TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                text.setText("OK");
-
-                text.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        customDialog.dismiss();
-                        finishAffinity();
-                        Intent intent = new Intent(AddMember.this, HomeActivity.class);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        startActivity(intent);
-                        overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                    }
-                });
-                customDialog.show();
-            }
-        }
-    }
-
-    private class GetCityListAsync extends AsyncTask<String, Void, String> {
-        final Dialog progressDialog = new Dialog(mContext, R.style.progress_dialog);
-
-        @Override
-        protected void onPreExecute() {
-            progressDialog.setContentView(R.layout.progress_dialog);
-            progressDialog.setCancelable(false);
-            progressDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            TextView msg = (TextView) progressDialog.findViewById(R.id.id_tv_loadingmsg);
-            msg.setText("Please wait ...");
-            progressDialog.setCanceledOnTouchOutside(false);
-            progressDialog.show();
-        }
-
-        @Override
-        protected String doInBackground(String... params) {
-            String state_id = params[0];
-            List<NameValuePair> parms = new LinkedList<NameValuePair>();
-            parms.add(new BasicNameValuePair(CensusConstants.state_id, state_id));
-            return new ConnectToServer().getDataFromUrl(CensusConstants.BASE_URL + CensusConstants.GET_CITY_LIST_URL, parms);
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            final Dialog customDialog = new Dialog(mContext);
-            customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-            customDialog.setContentView(R.layout.simple_alert);
-            customDialog.setCancelable(false);
-
-            progressDialog.dismiss();
-            Log.d(TAG, "on postexecute result >>> " + result);
-            try {
-                JSONObject jsonObject = new JSONObject(result);
-                String status = jsonObject.getString("status");
-                String status_code = jsonObject.getString("status_code");
-                String response = jsonObject.getString("response");
-
-                if (status.equals("success") && status_code.equals("1003")) {
-                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
-                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
-                    TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                    text.setText("OK");
-
-                    text.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            customDialog.dismiss();
-                        }
-                    });
-                    customDialog.show();
-                } else if (status.equals("success") && status_code.equals("1000")) {
-                    JSONArray jsonArray = jsonObject.getJSONArray("data");
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject explrObject = jsonArray.getJSONObject(i);
-                        String id = explrObject.getString("city_id");
-                        String name = explrObject.getString("city_name");
-                        mCityList.add(new State(id, name));
-                    }
-
-                    mCityListAdapter.notifyDataSetChanged();
-                }
-            } catch (JSONException jsonException) {
-                jsonException.printStackTrace();
-                ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Alert");
-                ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText("Server not Responding, please try again after sometime.");
-                TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                text.setText("OK");
-
-                text.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        customDialog.dismiss();
-                        finishAffinity();
-                        Intent intent = new Intent(AddMember.this, HomeActivity.class);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        startActivity(intent);
-                        overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                    }
-                });
-                customDialog.show();
-            }
-        }
-    }
-
-    public class GetRelationsListAsyncTask extends AsyncTask<Void, Void, String> {
-        final Dialog progressDialog = new Dialog(mContext, R.style.progress_dialog);
-
-        @Override
-        protected void onPreExecute() {
-            progressDialog.setContentView(R.layout.progress_dialog);
-            progressDialog.setCancelable(false);
-            progressDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            TextView msg = (TextView) progressDialog.findViewById(R.id.id_tv_loadingmsg);
-            msg.setText("Please wait ...");
-            progressDialog.setCanceledOnTouchOutside(false);
-            progressDialog.show();
-        }
-
-        @Override
-        protected String doInBackground(Void... params) {
-            return new ConnectToServer().getDataFromUrlGETMethod(CensusConstants.BASE_URL + CensusConstants.GET_RELATIONS_LIST_URL);
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            final Dialog customDialog = new Dialog(mContext);
-            customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-            customDialog.setContentView(R.layout.simple_alert);
-            customDialog.setCancelable(false);
-
-            progressDialog.dismiss();
-            Log.d(TAG, "on postexecute result >>> " + result);
-            try {
-                JSONObject jsonObject = new JSONObject(result);
-                String status = jsonObject.getString("status");
-                String status_code = jsonObject.getString("status_code");
-                String response = jsonObject.getString("response");
-
-                if (status.equals("error") && status_code.equals("1003")) {
-                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
-                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
-                    TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                    text.setText("OK");
-
-                    text.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            customDialog.dismiss();
-                        }
-                    });
-                    customDialog.show();
-                } else if (status.equals("success") && status_code.equals("1000")) {
-                    JSONArray jsonArray = jsonObject.getJSONArray("data");
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject explrObject = jsonArray.getJSONObject(i);
-                        String id = explrObject.getString("relation_id");
-                        String name = explrObject.getString("relation_name");
-                        mRelationsList.add(new State(id, name));
-                    }
-
-                    mRelationsAdapter.notifyDataSetChanged();
-                }
-            } catch (JSONException jsonException) {
-                jsonException.printStackTrace();
-                ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Alert");
-                ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText("Server not Responding, please try again after sometime.");
-                TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                text.setText("OK");
-
-                text.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        customDialog.dismiss();
-                        finishAffinity();
-                        Intent intent = new Intent(AddMember.this, HomeActivity.class);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        startActivity(intent);
-                        overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                    }
-                });
-                customDialog.show();
-            }
+        try {
+            dbATask.execute(dbAsyncParam);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

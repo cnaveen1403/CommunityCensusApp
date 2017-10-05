@@ -1,78 +1,101 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="horizontal"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+
     <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/imgIcon"
         android:layout_width="50dp"
         android:layout_height="50dp"
+        android:layout_centerVertical="true"
+        android:layout_margin="8dp"
+        android:scaleType="centerCrop"
         android:src="@drawable/ic_family_head"
         app:civ_border_color="@color/colorAccent"
-        app:civ_border_width="1dp"
-        android:scaleType="centerCrop"
-        android:layout_margin="8dp"
-        android:layout_centerVertical="true"/>
+        app:civ_border_width="1dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_toEndOf="@+id/imgIcon"
+        android:layout_toRightOf="@+id/imgIcon"
+        android:orientation="horizontal"
+        android:weightSum="2">
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:weightSum="2"
-            android:orientation="horizontal"
-            android:layout_centerVertical="true"
-            android:layout_toRightOf="@+id/imgIcon"
-            android:layout_toEndOf="@+id/imgIcon">
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-            <TextView android:id="@+id/txtTitle"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/txtTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textStyle="bold"
-                android:text="Test Text"
-                android:textSize="14sp"
-                android:textColor="#000000"
-                android:maxLines="1"
                 android:ellipsize="end"
-                android:maxEms="15"/>
-            <TextView android:id="@+id/txtPhone"
+                android:maxEms="15"
+                android:maxLines="1"
+                android:text="Test Text"
+                android:textColor="#000000"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtPhone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
                 android:layout_below="@+id/txtTitle"
+                android:layout_marginTop="5dp"
                 android:text="Test Text"
-                android:textSize="12sp"
-                android:textColor="#000000" />
+                android:textColor="#000000"
+                android:textSize="12sp" />
         </LinearLayout>
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.8"
+            android:orientation="vertical">
+
             <TextView
                 android:id="@+id/tv_family_size"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textStyle="bold"
-                android:text="Family Size"
-                android:textSize="14sp"
                 android:layout_gravity="center_horizontal"
-                android:textColor="@color/colorPrimary"
+                android:layout_marginLeft="16dp"
                 android:layout_toRightOf="@+id/txtTitle"
-                android:layout_marginLeft="16dp"/>
-            <TextView android:id="@+id/tv_family_size_value"
+                android:text="Family Size"
+                android:textColor="@color/colorPrimary"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_family_size_value"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
-                android:layout_gravity="center_horizontal"
                 android:layout_below="@+id/tv_family_size"
-                android:layout_toRightOf="@+id/txtPhone"
+                android:layout_gravity="center_horizontal"
                 android:layout_marginLeft="16dp"
+                android:layout_marginTop="5dp"
+                android:layout_toRightOf="@+id/txtPhone"
                 android:text="0 Members"
                 android:textSize="12sp" />
-            </LinearLayout>
         </LinearLayout>
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.2"
+            android:gravity="center"
+            android:layout_margin="8dp">
+            <ImageView
+                android:id="@+id/iv_status"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_status_green"
+                android:layout_gravity="center_vertical" />
+        </LinearLayout>
+    </LinearLayout>
 </RelativeLayout>

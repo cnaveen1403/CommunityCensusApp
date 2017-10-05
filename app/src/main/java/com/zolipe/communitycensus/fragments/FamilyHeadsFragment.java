@@ -1,10 +1,9 @@
 package com.zolipe.communitycensus.fragments;
 
 import android.app.Activity;
-import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -17,7 +16,6 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -26,26 +24,20 @@ import android.widget.EditText;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.zolipe.communitycensus.FamilyDetailsActivity;
 import com.zolipe.communitycensus.R;
+import com.zolipe.communitycensus.activity.FamilyDetailsActivity;
 import com.zolipe.communitycensus.adapter.FamilyHeadAdapter;
-import com.zolipe.communitycensus.app.AppData;
+import com.zolipe.communitycensus.database.DbAction;
+import com.zolipe.communitycensus.database.DbAsyncParameter;
+import com.zolipe.communitycensus.database.DbAsyncTask;
+import com.zolipe.communitycensus.database.DbParameter;
 import com.zolipe.communitycensus.interfaces.FamilyHeadsListItemClickListener;
 import com.zolipe.communitycensus.model.FamilyHead;
-import com.zolipe.communitycensus.util.CensusConstants;
-import com.zolipe.communitycensus.util.ConnectToServer;
+import com.zolipe.communitycensus.util.CommonUtils;
 import com.zolipe.communitycensus.util.DividerItemDecoration;
-
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.message.BasicNameValuePair;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 public class FamilyHeadsFragment extends Fragment implements FamilyHeadsListItemClickListener {
@@ -81,13 +73,20 @@ public class FamilyHeadsFragment extends Fragment implements FamilyHeadsListItem
         mContext = this.getActivity();
         mActivity = getActivity();
 
-        prepareFamilyHeadsList ("");
-        recyclerView = (RecyclerView)rootView.findViewById(R.id.recycler_view);
-        rl_data = (RelativeLayout)rootView.findViewById(R.id.rl_data);
-        rl_error = (RelativeLayout)rootView.findViewById(R.id.rl_error);
-        btn_retry = (Button)rootView.findViewById(R.id.btn_error_supervisor_list);
+        if (CommonUtils.isActiveNetwork(mContext)) {
+            getFamilyHeads();
+            new CommonUtils.GetFamilyHeadsListAsyncTask(mContext).execute("");
+        } else {
+            getFamilyHeads();
+        }
 
-        mAdapter = new FamilyHeadAdapter(headsList,mContext);
+//        getFamilyHeads();
+        recyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
+        rl_data = (RelativeLayout) rootView.findViewById(R.id.rl_data);
+        rl_error = (RelativeLayout) rootView.findViewById(R.id.rl_error);
+        btn_retry = (Button) rootView.findViewById(R.id.btn_error_supervisor_list);
+
+        mAdapter = new FamilyHeadAdapter(headsList, mContext);
         RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(mActivity);
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
@@ -98,12 +97,12 @@ public class FamilyHeadsFragment extends Fragment implements FamilyHeadsListItem
         recyclerView.addItemDecoration(itemDecoration);
 
         mActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
-        et_search = (EditText)rootView.findViewById(R.id.et_search);
+        et_search = (EditText) rootView.findViewById(R.id.et_search);
         et_search.addTextChangedListener(new TextWatcher() {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                System.out.println("Text ["+s+"]");
+                System.out.println("Text [" + s + "]");
                 mAdapter.getFilter().filter(s.toString());
             }
 
@@ -123,10 +122,15 @@ public class FamilyHeadsFragment extends Fragment implements FamilyHeadsListItem
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                     String search = et_search.getText().toString();
-                    prepareFamilyHeadsList(search);
+                    if (CommonUtils.isActiveNetwork(mContext)) {
+                        new CommonUtils.GetFamilyHeadsListAsyncTask(mContext).execute(search);
+                        getFamilyHeads();
+                    } else {
+                        getFamilyHeads();
+                    }
                     et_search.clearFocus();
 //                    et_search.setText("");
-                    InputMethodManager in = (InputMethodManager)mContext.getSystemService(Context.INPUT_METHOD_SERVICE);
+                    InputMethodManager in = (InputMethodManager) mContext.getSystemService(Context.INPUT_METHOD_SERVICE);
                     in.hideSoftInputFromWindow(et_search.getWindowToken(), 0);
                     return true;
                 }
@@ -137,147 +141,130 @@ public class FamilyHeadsFragment extends Fragment implements FamilyHeadsListItem
         btn_retry.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                prepareFamilyHeadsList("");
+                if (CommonUtils.isActiveNetwork(mContext)) {
+                    new CommonUtils.GetFamilyHeadsListAsyncTask(mContext).execute("");
+                    getFamilyHeads();
+                } else {
+                    getFamilyHeads();
+                }
             }
         });
 
         return rootView;
     }
 
-    private void prepareFamilyHeadsList(String search) {
-        new GetFamilyHeadsListAsyncTask().execute (search);
-    }
-
     @Override
     public void onResume() {
         super.onResume();
-        prepareFamilyHeadsList("");
+        if (CommonUtils.isActiveNetwork(mContext)) {
+            getFamilyHeads();
+            new CommonUtils.GetFamilyHeadsListAsyncTask(mContext).execute("");
+        } else {
+            getFamilyHeads();
+        }
     }
 
     @Override
-    public void onClick(View view, FamilyHead obj) {
+    public void onFamilyHeadClicked(View view, FamilyHead obj) {
         Intent intent = new Intent(mContext, FamilyDetailsActivity.class);
-        intent.putExtra("member_id", obj.getId());
+        intent.putExtra("family_head", obj);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
         getActivity().overridePendingTransition(R.anim.slide_from_right, R.anim.slide_to_left);
     }
 
-    public class GetFamilyHeadsListAsyncTask extends AsyncTask<String, Void, String> {
-        final Dialog progressDialog = new Dialog(mContext, R.style.progress_dialog);
+    private void getFamilyHeads() {
+        final DbAsyncTask dbATask = new DbAsyncTask(mContext, false, null);
+        DbParameter dbParams = new DbParameter();
+        ArrayList<Object> parms = new ArrayList<Object>();
+        parms.add("yes");
+        dbParams.addParamterList(parms);
 
-        @Override
-        protected void onPreExecute() {
-            progressDialog.setContentView(R.layout.progress_dialog);
-            progressDialog.setCancelable(false);
-            progressDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            TextView msg = (TextView) progressDialog.findViewById(R.id.id_tv_loadingmsg);
-            msg.setText("Please wait ...");
-            progressDialog.setCanceledOnTouchOutside(false);
-            progressDialog.show();
-        }
+        final DbAsyncParameter dbAsyncParam = new DbAsyncParameter(R.string.sql_select_family_heads,
+                DbAsyncTask.QUERY_TYPE_CURSOR, dbParams, null);
+        DbAction dbAction = new DbAction() {
 
-        @Override
-        protected String doInBackground(String... params) {
-            // params comes from the execute() call: params[0] is the url.
-            String search = params[0];
-            List<NameValuePair> parms = new LinkedList<NameValuePair>();
-            parms.add(new BasicNameValuePair("search_text", search));
-            parms.add(new BasicNameValuePair(CensusConstants.userid, AppData.getString(mContext, CensusConstants.userid)));
-            parms.add(new BasicNameValuePair("rolebased_user_id", AppData.getString(mContext, CensusConstants.rolebased_user_id)));
-            parms.add(new BasicNameValuePair("user_role", AppData.getString(mContext, CensusConstants.userRole)));
+            @Override
+            public void execPreDbAction() {
+            }
 
-            /*String paramString = URLEncodedUtils.format(parms, "utf-8");
-            String url = CensusConstants.BASE_URL + CensusConstants.FAMILY_HEADS_LIST_URL;
-            url += "?";
-            url += paramString;
-            Log.e(TAG, "url sending is >>> " + url);*/
-            return new ConnectToServer().getDataFromUrl(CensusConstants.BASE_URL + CensusConstants.FAMILY_HEADS_LIST_URL, parms);//HttpUtils.doPost(map, BureauConstants.BASE_URL+BureauConstants.REGISTER_URL);
-        }
+            @Override
+            public void execPostDbAction() {
+                Cursor cur = dbAsyncParam.getQueryCursor();
+                if (cur == null) {
+                    return;
+                }
 
-        // onPostExecute displays the results of the AsyncTask.
-        @Override
-        protected void onPostExecute(String result) {
-            final Dialog customDialog = new Dialog(mActivity);
-            customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-            customDialog.setContentView(R.layout.simple_alert);
-
-            progressDialog.dismiss();
-
-            Log.d(TAG, "on post execute result >>> " + result);
-            try {
-                JSONObject jsonObject = new JSONObject(result);
-                String status = jsonObject.getString("status");
-                String status_code = jsonObject.getString("status_code");
-                String response = jsonObject.getString("response");
-
-                if (status.equals("success") && status_code.equals("1003")) {
+                if (cur.getCount() == 0){
                     rl_data.setVisibility(View.GONE);
                     rl_error.setVisibility(View.VISIBLE);
-                    ((TextView)rootView.findViewById(R.id.tv_error_lbl)).setText(response);
-                } else if (status.equals("success") && status_code.equals("1000")) {
-                    rl_data.setVisibility(View.VISIBLE);
+                    ((TextView) rootView.findViewById(R.id.tv_error_lbl)).setText("No data found, Please add Family Members.");
+                }
+
+                if (cur.moveToFirst()) {
                     rl_error.setVisibility(View.GONE);
+                    rl_data.setVisibility(View.VISIBLE);
+                    do {
+                        try {
+                            String headId = cur.getString(cur.getColumnIndex("familyHeadId"));
+                            String first_name = cur.getString(cur.getColumnIndex("first_name"));
+                            String last_name = cur.getString(cur.getColumnIndex("last_name"));
+                            String phone_number = cur.getString(cur.getColumnIndex("phone_number"));
+                            String aadhaar = cur.getString(cur.getColumnIndex("aadhaar"));
+                            String email = cur.getString(cur.getColumnIndex("email"));
+                            String address = cur.getString(cur.getColumnIndex("address"));
+                            String gender = cur.getString(cur.getColumnIndex("gender"));
+                            String image_url = cur.getString(cur.getColumnIndex("image_url"));
+                            String age = cur.getString(cur.getColumnIndex("age"));
+                            String relationship = cur.getString(cur.getColumnIndex("relationship"));
+                            String size = cur.getString(cur.getColumnIndex("family_size"));
+                            String zipcode = cur.getString(cur.getColumnIndex("zipcode"));
+                            String dob = cur.getString(cur.getColumnIndex("dob"));
+                            String familyHeadId = cur.getString(cur.getColumnIndex("familyHeadId"));
+                            String isFamilyHead = cur.getString(cur.getColumnIndex("isFamilyHead"));
+                            String isSynced = cur.getString(cur.getColumnIndex("isSynced"));
 
-                    JSONArray jsonArray = jsonObject.getJSONArray("data");
-                    headsList.clear();
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject explrObject = jsonArray.getJSONObject(i);
-                        String headId = explrObject.getString("member_id");
-                        String first_name = explrObject.getString("first_name");
-                        String last_name = explrObject.getString("last_name");
-                        String phone_number = explrObject.getString("phone_number");
-                        String aadhaar = explrObject.getString("aadhar_number");
-                        String email = explrObject.getString("email");
-                        String address = explrObject.getString("address");
-                        String gender = explrObject.getString("gender");
-                        String image_url = explrObject.getString("image_url");
-                        String age = explrObject.getString("age");
-                        String zipcode = explrObject.getString("zipcode");
-                        String relationship = explrObject.getString("relationship");
-                        String size = explrObject.getString("member_count");
-                        String dob = explrObject.getString("dob");
-                        String familyHeadId = explrObject.getString("family_head_id");
-                        String isFamilyHead = explrObject.getString("isfamily_head");
-
-                        if (headsList.size() == 0) {
-                            headsList.add(new FamilyHead(headId, first_name, last_name,
-                                    phone_number, aadhaar, email,
-                                    address, gender, image_url, age, relationship, size, zipcode
-                                    , dob, familyHeadId, isFamilyHead));
-                        } else {
-                            boolean bStatus = true;
-                            Iterator<FamilyHead> iter = headsList.iterator();
-                            while (iter.hasNext()) {
-                                Log.d(TAG, "============ Inside if condition iterator ============= ");
-                                FamilyHead obj = iter.next();
-                                if (headId.equals(obj.getId())) {
-                                    bStatus = false;
-                                }
-                            }
-                            Log.d(TAG, "bStatus >>>> " + bStatus);
-                            if (bStatus) {
-//                                Log.d("SuperFragment", "************ Object Has been added successfully ************ ");
+                            if (headsList.size() == 0) {
                                 headsList.add(new FamilyHead(headId, first_name, last_name,
                                         phone_number, aadhaar, email,
                                         address, gender, image_url, age, relationship, size, zipcode
-                                        , dob, familyHeadId, isFamilyHead));
+                                        , dob, familyHeadId, isFamilyHead, isSynced));
+                            } else {
+                                boolean bStatus = true;
+                                Iterator<FamilyHead> iter = headsList.iterator();
+                                while (iter.hasNext()) {
+                                    Log.d(TAG, "============ Inside if condition iterator ============= ");
+                                    FamilyHead obj = iter.next();
+                                    if (aadhaar.equals(obj.getAadhaar())) {
+                                        bStatus = false;
+                                    }
+                                }
+                                Log.d(TAG, "bStatus >>>> " + bStatus);
+                                if (bStatus) {
+                                    headsList.add(new FamilyHead(headId, first_name, last_name,
+                                            phone_number, aadhaar, email,
+                                            address, gender, image_url, age, relationship, size, zipcode
+                                            , dob, familyHeadId, isFamilyHead, isSynced));
+                                }
                             }
+                        } catch (Exception e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
                         }
                     }
-
+                    while (cur.moveToNext());
                     mAdapter.notifyDataSetChanged();
-                }else if (status.equals("success") && status_code.equals("1001")) {
-                    rl_data.setVisibility(View.GONE);
-                    rl_error.setVisibility(View.VISIBLE);
-                    ((TextView)rootView.findViewById(R.id.tv_error_lbl)).setText("No data found, Please add Family Members.");
                 }
-            } catch (JSONException jsonException) {
-                jsonException.printStackTrace();
-                rl_data.setVisibility(View.GONE);
-                rl_error.setVisibility(View.VISIBLE);
-                ((TextView)rootView.findViewById(R.id.tv_error_lbl)).setText("Server not Responding, please try again after sometime.");
+                cur.close();
             }
+        };
+
+        dbAsyncParam.setDbAction(dbAction);
+
+        try {
+            dbATask.execute(dbAsyncParam);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

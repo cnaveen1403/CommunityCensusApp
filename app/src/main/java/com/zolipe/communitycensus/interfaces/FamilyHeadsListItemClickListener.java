@@ -5,5 +5,5 @@ import android.view.View;
 import com.zolipe.communitycensus.model.FamilyHead;
 
 public interface FamilyHeadsListItemClickListener {
-    void onClick(View view, FamilyHead obj);
+    void onFamilyHeadClicked(View view, FamilyHead obj);
 }

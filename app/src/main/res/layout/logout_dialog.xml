@@ -47,16 +47,16 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="NO"
-                android:theme="@style/SEND"
                 android:textColor="@color/colorPrimary"
+                android:theme="@style/SEND"
                 style="@style/Widget.AppCompat.Button.Borderless"/>
             <Button
                 android:id="@+id/btn_send"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="YES"
-                android:theme="@style/MyButton"
                 android:textColor="@color/colorPrimary"
+                android:theme="@style/MyButton"
                 style="@style/Widget.AppCompat.Button.Borderless"
                 android:layout_marginLeft="8dp"/>
         </LinearLayout>

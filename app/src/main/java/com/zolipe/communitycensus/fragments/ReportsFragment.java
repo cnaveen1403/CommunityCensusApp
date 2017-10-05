@@ -192,8 +192,8 @@ public class ReportsFragment extends Fragment {
         });
 
         Calendar now = Calendar.getInstance();
-        int year = now.get(Calendar.YEAR);
-        int day = now.get(Calendar.DAY_OF_MONTH);
+//        int year = now.get(Calendar.YEAR);
+//        int day = now.get(Calendar.DAY_OF_MONTH);
         int month = now.get(Calendar.MONTH);
         spinner_months.setSelection(month);
 

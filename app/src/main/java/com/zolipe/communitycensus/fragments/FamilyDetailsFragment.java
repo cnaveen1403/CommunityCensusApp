@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.drawable.ColorDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -12,7 +11,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -22,9 +20,9 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.zolipe.communitycensus.AddFamilyMember;
+import com.zolipe.communitycensus.activity.AddFamilyMember;
 import com.zolipe.communitycensus.R;
-import com.zolipe.communitycensus.ViewMember;
+import com.zolipe.communitycensus.activity.ViewMember;
 import com.zolipe.communitycensus.adapter.HorizantalListAdapter;
 import com.zolipe.communitycensus.app.AppData;
 import com.zolipe.communitycensus.model.FamilyHead;
@@ -33,7 +31,6 @@ import com.zolipe.communitycensus.util.ConnectToServer;
 import com.zolipe.communitycensus.util.HorizontalListView;
 
 import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -204,7 +201,7 @@ public class FamilyDetailsFragment extends Fragment {
                             familyHeadsList.add(new FamilyHead(headId, first_name, last_name,
                                     phone_number, aadhaar, email,
                                     address, gender, image_url, age, relationship, size, zipcode
-                                    , dob, familyHeadId, isFamilyHead));
+                                    , dob, familyHeadId, isFamilyHead, "yes"));
                         }
                     }
                     familyMembersList.setAdapter(new HorizantalListAdapter(mContext, familyHeadsList));

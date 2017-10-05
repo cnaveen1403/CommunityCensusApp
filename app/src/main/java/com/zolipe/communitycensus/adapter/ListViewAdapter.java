@@ -12,7 +12,7 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.zolipe.communitycensus.AddMember;
+import com.zolipe.communitycensus.activity.AddMember;
 import com.zolipe.communitycensus.R;
 import com.zolipe.communitycensus.model.FamilyHead;
 
@@ -122,7 +122,7 @@ public class ListViewAdapter extends BaseAdapter implements Filterable, ISpinner
                 return filterResults;
             }
 /*            Log.d(LOG_TAG, "Here is the control");*/
-           new AddMember().callAsync(constraint.toString());
+//           new AddMember().callAsync(constraint.toString());
             final ArrayList<FamilyHead> filterStrings = new ArrayList<>();
             for (FamilyHead tempObj : mBackupList) {
                 if (tempObj.getFirst_name().toLowerCase().contains(constraint)) {

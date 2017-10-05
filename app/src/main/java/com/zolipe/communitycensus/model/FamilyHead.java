@@ -20,12 +20,14 @@ public class FamilyHead implements Parcelable {
     private String dob;
     private String familyHeadId;
     private String isFamilyHead;
+    private String isSynced;
 
     public FamilyHead(String memberId, String first_name, String last_name,
                       String phone, String aadhaar, String email,
                       String address, String gender, String url,
                       String age, String relationship, String family_size,
-                      String zipcode, String dob, String familyHeadId, String isFamilyHead) {
+                      String zipcode, String dob, String familyHeadId, String isFamilyHead,
+                      String isSynced) {
         this.id = memberId;
         this.first_name = first_name;
         this.last_name = last_name;
@@ -42,6 +44,7 @@ public class FamilyHead implements Parcelable {
         this.dob = dob;
         this.familyHeadId = familyHeadId;
         this.isFamilyHead = isFamilyHead;
+        this.isSynced = isSynced;
     }
 
     protected FamilyHead(Parcel in) {
@@ -61,6 +64,7 @@ public class FamilyHead implements Parcelable {
         dob = in.readString();
         familyHeadId = in.readString();
         isFamilyHead = in.readString();
+        isSynced = in.readString();
     }
 
     public static final Creator<FamilyHead> CREATOR = new Creator<FamilyHead>() {
@@ -203,6 +207,14 @@ public class FamilyHead implements Parcelable {
         this.isFamilyHead = isFamilyHead;
     }
 
+    public String getIsSynced() {
+        return isSynced;
+    }
+
+    public void setIsSynced(String isSynced) {
+        this.isSynced = isSynced;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -226,5 +238,6 @@ public class FamilyHead implements Parcelable {
         dest.writeString(dob);
         dest.writeString(familyHeadId);
         dest.writeString(isFamilyHead);
+        dest.writeString(isSynced);
     }
 }

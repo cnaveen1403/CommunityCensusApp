@@ -1,4 +1,4 @@
-package com.zolipe.communitycensus;
+package com.zolipe.communitycensus.activity;
 
 import android.Manifest;
 import android.animation.Animator;
@@ -31,6 +31,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.zolipe.communitycensus.R;
 import com.zolipe.communitycensus.permissions.PermissionsActivity;
 import com.zolipe.communitycensus.permissions.PermissionsChecker;
 import com.zolipe.communitycensus.util.CensusConstants;

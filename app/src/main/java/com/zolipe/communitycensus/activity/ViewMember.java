@@ -1,4 +1,4 @@
-package com.zolipe.communitycensus;
+package com.zolipe.communitycensus.activity;
 
 import android.app.Dialog;
 import android.content.Intent;
@@ -14,6 +14,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.zolipe.communitycensus.R;
 import com.zolipe.communitycensus.fragments.EditMemberFragment;
 import com.zolipe.communitycensus.fragments.ViewMemberFragment;
 import com.zolipe.communitycensus.model.FamilyHead;

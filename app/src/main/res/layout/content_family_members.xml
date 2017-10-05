@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:showIn="@layout/activity_family_members"
-    tools:context="com.zolipe.communitycensus.FamilyMembers">
+    tools:context="com.zolipe.communitycensus.activity.FamilyMembers">
 
     <EditText
         android:id="@+id/et_search"

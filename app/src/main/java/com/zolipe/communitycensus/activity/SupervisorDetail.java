@@ -1,13 +1,15 @@
-package com.zolipe.communitycensus;
+package com.zolipe.communitycensus.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.MenuItem;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.zolipe.communitycensus.R;
 import com.zolipe.communitycensus.model.SupervisorObj;
 
 import de.hdodenhof.circleimageview.CircleImageView;
@@ -57,6 +59,21 @@ public class SupervisorDetail extends AppCompatActivity {
         tv_address = (TextView) findViewById(R.id.tv_address_value);
         tv_zipcode = (TextView) findViewById(R.id.tv_zipcode_value);
         iv_image = (CircleImageView)findViewById(R.id.iv_image);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        super.onOptionsItemSelected(item);
+
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+                overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
+                return true;
+
+            default:
+                return true;
+        }
     }
 
     @Override

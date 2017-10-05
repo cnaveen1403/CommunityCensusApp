@@ -16,11 +16,14 @@ public class SupervisorObj implements Parcelable{
     private String image_url;
     private String zipcode;
     private String member_count;
+    private String dob;
+    private String isSynced;
 
     public SupervisorObj (String id, String first_name, String last_name,
                           String phone, String aadhar, String email,
                           String address, String age, String gender,
-                          String url, String zipcode, String member_count){
+                          String url, String zipcode, String member_count,
+                          String dob, String isSynced){
         this.id = id;
         this.first_name = first_name;
         this.last_name = last_name;
@@ -33,6 +36,9 @@ public class SupervisorObj implements Parcelable{
         this.image_url = url;
         this.zipcode = zipcode;
         this.member_count = member_count;
+        this.dob = dob;
+
+        this.isSynced = isSynced;
     }
 
     protected SupervisorObj(Parcel in) {
@@ -47,6 +53,9 @@ public class SupervisorObj implements Parcelable{
         address = in.readString();
         image_url = in.readString();
         zipcode = in.readString();
+        member_count = in.readString();
+        dob = in.readString();
+        isSynced = in.readString();
     }
 
     public static final Creator<SupervisorObj> CREATOR = new Creator<SupervisorObj>() {
@@ -157,6 +166,22 @@ public class SupervisorObj implements Parcelable{
         this.member_count = member_count;
     }
 
+    public String getDob() {
+        return dob;
+    }
+
+    public void setDob(String dob) {
+        this.dob = dob;
+    }
+
+    public String getIsSynced() {
+        return isSynced;
+    }
+
+    public void setIsSynced(String isSynced) {
+        this.isSynced = isSynced;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -175,5 +200,8 @@ public class SupervisorObj implements Parcelable{
         dest.writeString(address);
         dest.writeString(image_url);
         dest.writeString(zipcode);
+        dest.writeString(member_count);
+        dest.writeString(dob);
+        dest.writeString(isSynced);
     }
 }

@@ -1,4 +1,4 @@
-package com.zolipe.communitycensus;
+package com.zolipe.communitycensus.activity;
 
 import android.Manifest;
 import android.app.DatePickerDialog;
@@ -48,6 +48,7 @@ import com.digits.sdk.android.AuthConfig;
 import com.digits.sdk.android.Digits;
 import com.digits.sdk.android.DigitsException;
 import com.digits.sdk.android.DigitsSession;
+import com.zolipe.communitycensus.R;
 import com.zolipe.communitycensus.adapter.StateListAdapter;
 import com.zolipe.communitycensus.app.AppData;
 import com.zolipe.communitycensus.model.State;
@@ -362,6 +363,11 @@ public class SignUpActivity extends AppCompatActivity {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         // TODO Auto-generated method stub
         super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == 0 && resultCode == 0) {
+            openFileChooserDialog();
+        }
+
         Uri correctedUri = null;
         if (requestCode == REQUEST_CAMERA && resultCode == RESULT_OK) {
             //----- Correct Image Rotation ----//
@@ -679,7 +685,7 @@ Log.e("SignUPScuccess", "phoneNumber >>> " + phoneNumber.substring(1));
             @Override
             public void onClick(View v) {
                 dialog.dismiss();
-                mEncodedData = CensusConstants.mBasicAvatarData;
+                mEncodedData = "";
                 registerClicked();
             }
         });

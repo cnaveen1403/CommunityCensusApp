@@ -38,7 +38,7 @@ public class SupervisorAdapter extends RecyclerView.Adapter<SupervisorAdapter.My
     public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
         public TextView name, phone_number, tv_members_size, tv_family_size;
 //        public ImageView profile_pic, icon_edit, icon_delete;
-        public ImageView profile_pic;
+        public ImageView profile_pic, iv_status;
 
         public MyViewHolder(View itemView) {
             super(itemView);
@@ -48,6 +48,7 @@ public class SupervisorAdapter extends RecyclerView.Adapter<SupervisorAdapter.My
             profile_pic = (ImageView) itemView.findViewById(R.id.imgIcon);
             tv_members_size = (TextView) itemView.findViewById(R.id.tv_members_size_value);
             tv_family_size = (TextView) itemView.findViewById(R.id.tv_family_size);
+            iv_status = (ImageView)itemView.findViewById(R.id.iv_status);
 //            icon_edit = (ImageView) itemView.findViewById(R.id.ic_edit);
 //            icon_delete = (ImageView) itemView.findViewById(R.id.ic_delete);
         }
@@ -80,7 +81,9 @@ public class SupervisorAdapter extends RecyclerView.Adapter<SupervisorAdapter.My
         holder.name.setText(name);
         holder.phone_number.setText(supervisor.getPhone_number());
         holder.tv_members_size.setText(supervisor.getMember_count());
-        holder.profile_pic.setImageResource(R.drawable.app_icon);
+        //holder.profile_pic.setImageResource(R.drawable.ic_supervisor_list);
+        int resId = (supervisor.getIsSynced().equals("yes")?R.drawable.ic_status_green:R.drawable.ic_status_yellow);
+        holder.iv_status.setImageResource(resId);
         Glide.with(context).load(supervisor.getImage_url())
 //                .thumbnail(0.5f)
                 .crossFade()

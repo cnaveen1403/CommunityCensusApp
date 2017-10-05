@@ -1,7 +1,6 @@
 package com.zolipe.communitycensus.adapter;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.Log;
@@ -38,7 +37,7 @@ public class FamilyHeadAdapter extends RecyclerView.Adapter<FamilyHeadAdapter.My
     public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
         public TextView name, phone_number, tv_familySizeVal, tv_family_size;
         //        public ImageView profile_pic, icon_edit, icon_delete;
-        public ImageView profile_pic;
+        public ImageView profile_pic, iv_status;
 
         public MyViewHolder(View itemView) {
             super(itemView);
@@ -48,14 +47,15 @@ public class FamilyHeadAdapter extends RecyclerView.Adapter<FamilyHeadAdapter.My
             profile_pic = (ImageView) itemView.findViewById(R.id.imgIcon);
             tv_family_size = (TextView)itemView.findViewById(R.id.tv_family_size);
             tv_familySizeVal = (TextView)itemView.findViewById(R.id.tv_family_size_value);
+            iv_status = (ImageView)itemView.findViewById(R.id.iv_status);
 //            icon_edit = (ImageView) itemView.findViewById(R.id.ic_edit);
 //            icon_delete = (ImageView) itemView.findViewById(R.id.ic_delete);
         }
 
         @Override
         public void onClick(View v) {
-            Log.d("Adapter", "Clicked Herer *************** ");
-            if (itemClickListener != null) itemClickListener.onClick(v, headsList.get(getAdapterPosition()));
+            Log.e("Adapter", "Clicked Herer *************** " + getAdapterPosition());
+            if (itemClickListener != null) itemClickListener.onFamilyHeadClicked(v, headsList.get(getAdapterPosition()));
         }
     }
 
@@ -80,6 +80,8 @@ public class FamilyHeadAdapter extends RecyclerView.Adapter<FamilyHeadAdapter.My
         holder.name.setText(name);
         holder.phone_number.setText(familyHeads.getPhone_number());
         holder.tv_familySizeVal.setText(familyHeads.getFamily_size());
+        int resId = (familyHeads.getIsSynced().equals("yes")?R.drawable.ic_status_green:R.drawable.ic_status_yellow);
+        holder.iv_status.setImageResource(resId);
         Glide.with(context).load(familyHeads.getImage_url())
 //                .thumbnail(0.5f)
                 .crossFade()

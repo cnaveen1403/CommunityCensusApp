@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:title="Supervisor">
+    <item android:title="New">
         <menu>
             <item
+                android:id="@+id/nav_add_member"
+                android:icon="@drawable/nav_add_member"
+                android:title="Add Member" />
+            <item
                 android:id="@+id/nav_add_supervisor"
-                android:icon="@drawable/ic_supervisor_list"
+                android:icon="@drawable/nav_add_supervisor"
                 android:title="Add Supervisor" />
         </menu>
     </item>

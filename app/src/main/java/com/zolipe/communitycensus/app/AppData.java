@@ -3,6 +3,11 @@ package com.zolipe.communitycensus.app;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.zolipe.communitycensus.database.GDatabaseHelper;
+import com.zolipe.communitycensus.model.State;
+
+import java.util.ArrayList;
+
 public class AppData {
     private static final String SQLITE_NAME = "CommunityCensus";
 
@@ -40,4 +45,5 @@ public class AppData {
 //        editor.apply();
         editor.commit();
     }
+
 }
