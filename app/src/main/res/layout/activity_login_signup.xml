@@ -71,6 +71,7 @@
             android:text="Login with Mobile"
             android:textAlignment="center"
             android:textAllCaps="false"
+            android:drawableStart="@drawable/common_full_open_on_phone"
             android:layout_centerHorizontal="true"
             android:layout_below="@+id/auth_button_login"/>
 
