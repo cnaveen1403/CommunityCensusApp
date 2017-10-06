@@ -24,8 +24,6 @@
     <string name="title_activity_add_supervisor">Add Supervisor</string>
     <string name="title_activity_add_member">Add Member</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="title_activity_list_family_head">ListFamilyHead</string>
     <string name="lbl_member">Member</string>
     <string name="txt_family_head">Is Family Head ?</string>

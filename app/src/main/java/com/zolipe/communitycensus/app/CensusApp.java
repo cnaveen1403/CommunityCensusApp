@@ -4,10 +4,6 @@ import android.app.Application;
 
 import com.zolipe.communitycensus.util.CensusReceiver;
 
-/**
- * Created by MYPC on 9/28/2017.
- */
-
 public class CensusApp extends Application {
     private static CensusApp mInstance;
 

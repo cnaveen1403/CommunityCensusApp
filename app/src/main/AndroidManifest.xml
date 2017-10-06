@@ -161,12 +161,10 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.zolipe.communitycensus.activity.FamilyDetailsActivity" />
         </activity>
-
-        <activity
-            android:name="com.facebook.accountkit.ui.AccountKitActivity" />
+        <activity android:name="com.facebook.accountkit.ui.AccountKitActivity" />
 
         <receiver
-            android:name="com.zolipe.communitycensus.util.CensusReceiver"
+            android:name=".util.CensusReceiver"
             android:enabled="true">
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
@@ -177,13 +175,20 @@
             android:name=".util.CensusService"
             android:exported="false" />
 
-        <meta-data android:name="com.facebook.accountkit.ApplicationName"
+        <meta-data
+            android:name="com.facebook.accountkit.ApplicationName"
             android:value="@string/app_name" />
-        <meta-data android:name="com.facebook.sdk.ApplicationId"
+        <meta-data
+            android:name="com.facebook.sdk.ApplicationId"
             android:value="@string/FACEBOOK_APP_ID" />
-        <meta-data android:name="com.facebook.accountkit.ClientToken"
+        <meta-data
+            android:name="com.facebook.accountkit.ClientToken"
             android:value="@string/ACCOUNT_KIT_CLIENT_TOKEN" />
-        <meta-data android:name="com.facebook.accountkit.FacebookAppEventsEnabled"
-            android:value="false"/>
+        <meta-data
+            android:name="com.facebook.accountkit.FacebookAppEventsEnabled"
+            android:value="false" />
+
+        <activity android:name=".activity.ErrorActivity"></activity>
     </application>
+
 </manifest>

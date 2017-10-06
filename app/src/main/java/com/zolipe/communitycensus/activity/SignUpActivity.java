@@ -43,11 +43,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import com.digits.sdk.android.AuthCallback;
-import com.digits.sdk.android.AuthConfig;
-import com.digits.sdk.android.Digits;
-import com.digits.sdk.android.DigitsException;
-import com.digits.sdk.android.DigitsSession;
 import com.zolipe.communitycensus.R;
 import com.zolipe.communitycensus.adapter.StateListAdapter;
 import com.zolipe.communitycensus.app.AppData;
@@ -132,7 +127,6 @@ public class SignUpActivity extends AppCompatActivity {
     private void init() {
         mContext = SignUpActivity.this;
         checker = new PermissionsChecker(this);
-        Digits.clearActiveSession();
         new StatesListAsyncTask().execute();
 
         animation = new TranslateAnimation(0, 0, 300, 0);
@@ -512,7 +506,7 @@ public class SignUpActivity extends AppCompatActivity {
                         Digits.clearActiveSession();
                     }*/
 
-                    authenticateDigits(getMobileNumber());
+//                    authenticateDigits(getMobileNumber());
                 }
             });
 
@@ -529,7 +523,7 @@ public class SignUpActivity extends AppCompatActivity {
         }
     }
 
-    final AuthCallback digitsCallback = new AuthCallback() {
+    /*final AuthCallback digitsCallback = new AuthCallback() {
         @Override
         public void success(DigitsSession session, String phoneNumber) {
             // TODO: associate the session userID with your user model
@@ -542,14 +536,14 @@ Log.e("SignUPScuccess", "phoneNumber >>> " + phoneNumber.substring(1));
         public void failure(DigitsException exception) {
             Log.d("Digits", "Sign in with Digits failure", exception);
         }
-    };
+    };*/
 
     private void submitSignupForm() {
         //TODO : submit all the final values to the server
         new RegisterUser().execute();
     }
 
-    public void authenticateDigits(String mobileNumber) {
+    /*public void authenticateDigits(String mobileNumber) {
         Log.d("AuthenticateDigits", "Mobile number >>> " + mobileNumber);
         AuthConfig.Builder authConfigBuilder = new AuthConfig.Builder()
                 .withAuthCallBack(digitsCallback)
@@ -557,7 +551,7 @@ Log.e("SignUPScuccess", "phoneNumber >>> " + phoneNumber.substring(1));
                 .withPhoneNumber("+91" + mobileNumber);
 
         Digits.authenticate(authConfigBuilder.build());
-    }
+    }*/
 
     public String getFname() {
         return et_first_name.getText().toString();

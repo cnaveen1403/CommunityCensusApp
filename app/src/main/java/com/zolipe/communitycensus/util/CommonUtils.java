@@ -9,8 +9,6 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import com.zolipe.communitycensus.R;
-import com.zolipe.communitycensus.activity.AddMember;
-import com.zolipe.communitycensus.activity.HomeActivity;
 import com.zolipe.communitycensus.app.AppData;
 import com.zolipe.communitycensus.database.DbAction;
 import com.zolipe.communitycensus.database.DbAsyncParameter;
@@ -31,8 +29,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -43,9 +39,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.digits.sdk.android.internal.InviteStrategy.TAG;
-
 public class CommonUtils {
+    public static String TAG = "CommonUtils";
     public static int TYPE_WIFI = 1;
     public static int TYPE_MOBILE = 2;
     public static int TYPE_NOT_CONNECTED = 0;

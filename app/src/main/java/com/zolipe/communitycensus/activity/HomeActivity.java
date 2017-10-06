@@ -26,7 +26,6 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -37,7 +36,6 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.digits.sdk.android.Digits;
 import com.github.amlcurran.showcaseview.OnShowcaseEventListener;
 import com.github.amlcurran.showcaseview.ShowcaseView;
 import com.github.amlcurran.showcaseview.targets.ViewTarget;
@@ -445,7 +443,7 @@ public class HomeActivity extends AppCompatActivity
         toolbar.setTitle("Community Census");
         setSupportActionBar(toolbar);
 
-        fab_add_supervisor = (FloatingActionButton) findViewById(R.id.fab_add_supervisor);
+        fab_add_member = (FloatingActionButton) findViewById(R.id.fab_add_member);
         final DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout_sup);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -725,7 +723,6 @@ public class HomeActivity extends AppCompatActivity
                 dialog.dismiss();
 //                mLoggedIn = false;
 //                mDigitsSession = null;
-                Digits.logout();
                 AppData.saveBoolean(getApplicationContext(), CensusConstants.isLoggedIn, false);
                 AppData.clearPreferences(getApplicationContext());
                 finishAffinity();

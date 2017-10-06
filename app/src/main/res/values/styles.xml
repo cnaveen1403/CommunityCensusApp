@@ -29,15 +29,6 @@
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
-    <style name="CustomDigitsTheme" parent="AppTheme">
-        <item name="android:textColorPrimary">#020202</item>
-        <item name="android:textColorSecondary">@color/colorPrimaryDark</item>
-        <item name="android:windowBackground">@android:color/white</item>
-        <item name="android:textColorLink">@color/colorPrimary</item>
-        <item name="dgts__accentColor">@color/colorPrimaryDark</item>
-        <item name="dgts__logoDrawable">@drawable/logo_blue</item>
-    </style>
-
     <style name="TransparentActionBar" parent="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
         <item name="android:windowActionBarOverlay">true</item>
         <!-- Support library compatibility -->
