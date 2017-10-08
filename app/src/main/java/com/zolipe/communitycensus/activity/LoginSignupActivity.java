@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.graphics.Paint;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Debug;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -180,6 +181,23 @@ public class LoginSignupActivity extends Activity {
         }
     }
 
+    public void phoneLogin(final View view) {
+        final Intent intent = new Intent(LoginSignupActivity.this, AccountKitActivity.class);
+        AccountKitConfiguration.AccountKitConfigurationBuilder configurationBuilder =
+                new AccountKitConfiguration.AccountKitConfigurationBuilder(
+                        LoginType.PHONE,
+                        AccountKitActivity.ResponseType.TOKEN); // or .ResponseType.TOKEN
+        configurationBuilder.setReceiveSMS(true);
+        configurationBuilder.setSMSWhitelist(WHITE_LIST);
+        configurationBuilder.setDefaultCountryCode("IN");
+        // ... perform additional configuration ...
+        intent.putExtra(
+                AccountKitActivity.ACCOUNT_KIT_ACTIVITY_CONFIGURATION,
+                configurationBuilder.build());
+        startActivityForResult(intent, APP_REQUEST_CODE);
+//        overridePendingTransition(R.anim.slide_from_right, R.anim.slide_to_left);
+    }
+
     @Override
     protected void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -210,7 +228,7 @@ public class LoginSignupActivity extends Activity {
             }
 
             // Surface the result to your user in an appropriate way.
-//            Toast.makeText(this,toastMessage,Toast.LENGTH_LONG).show();
+            Toast.makeText(this,toastMessage,Toast.LENGTH_LONG).show();
         }
     }
 
@@ -245,23 +263,6 @@ public class LoginSignupActivity extends Activity {
                 Log.e(TAG, "onError: INSIDE ERROR ");
             }
         });
-    }
-
-    public void phoneLogin(final View view) {
-        final Intent intent = new Intent(LoginSignupActivity.this, AccountKitActivity.class);
-        AccountKitConfiguration.AccountKitConfigurationBuilder configurationBuilder =
-                new AccountKitConfiguration.AccountKitConfigurationBuilder(
-                        LoginType.PHONE,
-                        AccountKitActivity.ResponseType.TOKEN); // or .ResponseType.TOKEN
-        configurationBuilder.setReceiveSMS(true);
-        configurationBuilder.setSMSWhitelist(WHITE_LIST);
-//        configurationBuilder.setDefaultCountryCode("IN");
-        // ... perform additional configuration ...
-        intent.putExtra(
-                AccountKitActivity.ACCOUNT_KIT_ACTIVITY_CONFIGURATION,
-                configurationBuilder.build());
-        startActivityForResult(intent, APP_REQUEST_CODE);
-        overridePendingTransition(R.anim.slide_from_right, R.anim.slide_to_left);
     }
 
     private boolean isValidParams() {

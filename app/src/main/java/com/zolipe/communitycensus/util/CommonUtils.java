@@ -1,14 +1,25 @@
 package com.zolipe.communitycensus.util;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
 
 import com.zolipe.communitycensus.R;
+import com.zolipe.communitycensus.activity.HomeActivity;
 import com.zolipe.communitycensus.app.AppData;
 import com.zolipe.communitycensus.database.DbAction;
 import com.zolipe.communitycensus.database.DbAsyncParameter;
@@ -29,7 +40,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.net.HttpURLConnection;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -38,6 +48,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+
+import static android.content.Context.NOTIFICATION_SERVICE;
 
 public class CommonUtils {
     public static String TAG = "CommonUtils";
@@ -340,34 +352,34 @@ public class CommonUtils {
         final DbAsyncTask dbATask = new DbAsyncTask(context, false, null);
         DbParameter dbParams_duty = new DbParameter();
         try {
-                ArrayList<Object> parms = new ArrayList<Object>();
-                String relationId = getRelationShipId(context, explrObject.getString("relationship"));
-                parms.add(explrObject.getString("first_name"));
-                parms.add(explrObject.getString("last_name"));
-                parms.add(explrObject.getString("phone_number"));
-                parms.add(explrObject.getString("email"));
-                parms.add(explrObject.getString("address"));
-                parms.add(explrObject.getString("gender"));
-                parms.add(explrObject.getString("age"));
-                parms.add(explrObject.getString("image_url"));
-                parms.add("");//encoded data
-                parms.add(relationId);
-                parms.add(explrObject.getString("member_count"));
-                parms.add(explrObject.getString("zipcode"));
-                parms.add(explrObject.getString("dob"));
-                parms.add(explrObject.getString("head_aadhar_number"));
-                parms.add(explrObject.getString("isfamily_head"));
-                parms.add("yes");
-                parms.add(explrObject.getString("city_id"));
-                parms.add(explrObject.getString("state_id"));
-                parms.add(explrObject.getString("country"));
-                parms.add("");//Image type
-                parms.add("member");
-                parms.add(explrObject.getString("member_id"));
-                parms.add(explrObject.getString("created_by"));
-                parms.add(explrObject.getString("aadhar_number"));
+            ArrayList<Object> parms = new ArrayList<Object>();
+            String relationId = getRelationShipId(context, explrObject.getString("relationship"));
+            parms.add(explrObject.getString("first_name"));
+            parms.add(explrObject.getString("last_name"));
+            parms.add(explrObject.getString("phone_number"));
+            parms.add(explrObject.getString("email"));
+            parms.add(explrObject.getString("address"));
+            parms.add(explrObject.getString("gender"));
+            parms.add(explrObject.getString("age"));
+            parms.add(explrObject.getString("image_url"));
+            parms.add("");//encoded data
+            parms.add(relationId);
+            parms.add(explrObject.getString("member_count"));
+            parms.add(explrObject.getString("zipcode"));
+            parms.add(explrObject.getString("dob"));
+            parms.add(explrObject.getString("head_aadhar_number"));
+            parms.add(explrObject.getString("isfamily_head"));
+            parms.add("yes");
+            parms.add(explrObject.getString("city_id"));
+            parms.add(explrObject.getString("state_id"));
+            parms.add(explrObject.getString("country"));
+            parms.add("");//Image type
+            parms.add("member");
+            parms.add(explrObject.getString("member_id"));
+            parms.add(explrObject.getString("created_by"));
+            parms.add(explrObject.getString("aadhar_number"));
 
-                dbParams_duty.addParamterList(parms);
+            dbParams_duty.addParamterList(parms);
 
             final DbAsyncParameter dbAsyncParam_duty = new DbAsyncParameter(R.string.sql_insert_members,
                     DbAsyncTask.QUERY_TYPE_BULK_UPDATE, dbParams_duty, null);
@@ -424,7 +436,6 @@ public class CommonUtils {
             String sresponse = "empty response !!!!!!!!!";
             // params comes from the execute() call: params[0] is the url.
             try {
-                HttpURLConnection urlConnection = null;
                 HttpClient httpClient = new DefaultHttpClient();
                 HttpPost httpPost = new HttpPost(CensusConstants.BASE_URL + CensusConstants.UPLOAD_OFFLINE_SUPERVISORS_URL);
                 httpPost.setEntity(new StringEntity(params[0], "UTF-8"));
@@ -434,8 +445,6 @@ public class CommonUtils {
                 response = httpClient.execute(httpPost);
 //                sresponse = response.getEntity().toString();
                 sresponse = EntityUtils.toString(response.getEntity());
-                Log.e(TAG, "doInBackground: sresponse >>> " + sresponse);
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -452,12 +461,10 @@ public class CommonUtils {
                 JSONObject jsonObject = new JSONObject(result);
                 String status = jsonObject.getString("status");
                 String status_code = jsonObject.getString("status_code");
-                String response = jsonObject.getString("response");
-                Log.e(TAG, "onPostExecute: result >>>> tttttttttttt : >>>>>>>>> " + result);
                 //{"status":"success","status_code":"1000","offline_ids":"12","response":"Add offline Supervisors Successful"}
                 if (status.equals("success") && status_code.equals("1000")) {
-                    String ids = jsonObject.getString("response");
-                    updateOfflineRecords(context, ids);
+                    String ids = jsonObject.getString("offline_ids");
+                    updateOfflineRecords(context, ids, "supervisor");
                 } else {
                     Log.e(TAG, "onPostExecute: Some error in uploading the Profiles : " + result);
                 }
@@ -465,23 +472,60 @@ public class CommonUtils {
                 jsonException.printStackTrace();
             }
         }
+    }
 
-        private void updateOfflineRecords(Context context, String ids) {
-            String[] array = ids.split(",");
-            for (int i = 0; 1 < array.length; i++) {
-                updateSupervisorRecordInLocalDB(context, i);
+    private static void updateOfflineRecords(Context context, String ids, String userDataType) {
+        String[] array = ids.split(",");
+        for (int i = 0; 1 < array.length; i++) {
+            if (userDataType.equals("supervisor")) {
+                updateSupervisorRecordInLocalDB(context, Integer.parseInt(array[i]));
+            }else if (userDataType.equals("member")){
+                updateMemberRecordInLocalDB(context, Integer.parseInt(array[i]));
             }
-
-//            updateSupervisorList ()
         }
 
-        private void updateSupervisorRecordInLocalDB(Context context, int id) {
-            GDatabaseHelper dbHelper = GDatabaseHelper.getInstance(context);
-            String query = "UPDATE  SupervisorInfo SET `isSynced`='yes' WHERE id=" + id;
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
-            Cursor cursor = db.rawQuery(query, null);
-            cursor.close();
-        }
+        if (userDataType.equals("supervisor"))
+            showNotification(context, "Your offline data of supervisor has been synced successfully");
+
+        if (userDataType.equals("member"))
+            showNotification(context, "offline Members data has been synced successfully");
+    }
+
+    private static void updateSupervisorRecordInLocalDB(Context context, int id) {
+        GDatabaseHelper dbHelper = GDatabaseHelper.getInstance(context);
+        String query = "UPDATE  SupervisorInfo SET `isSynced`='yes' WHERE id=" + id;
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        Cursor cursor = db.rawQuery(query, null);
+        cursor.close();
+    }
+
+    private static void updateMemberRecordInLocalDB(Context context, int id) {
+        GDatabaseHelper dbHelper = GDatabaseHelper.getInstance(context);
+        String query = "UPDATE  MemberInfo SET `isSynced`='yes' WHERE id=" + id;
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        Cursor cursor = db.rawQuery(query, null);
+        cursor.close();
+    }
+
+    public static void showNotification(Context context, String message) {
+        Log.e(TAG, "showNotification: INSIDE THIS METHOD ");
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
+        builder.setSmallIcon(R.drawable.logo_blue);
+        Intent intent = new Intent(context, HomeActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
+        builder.setContentIntent(pendingIntent);
+        builder.setLargeIcon(BitmapFactory.decodeResource(context.getResources(), R.drawable.logo_blue));
+        builder.setContentTitle("Community Census");
+        builder.setContentText(message);
+        builder.setSubText("Tap to view");
+        builder.setPriority(Notification.PRIORITY_HIGH);
+        builder.setDefaults(Notification.DEFAULT_ALL);
+
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(NOTIFICATION_SERVICE);
+
+        // Will display the notification in the notification bar
+        notificationManager.notify(1, builder.build());
     }
 
     public static void saveSupervisorsToLocalDB(Context context, JSONObject jsonObject) {
@@ -559,7 +603,6 @@ public class CommonUtils {
             // params comes from the execute() call: params[0] is the url.
             try {
                 HttpClient httpClient = new DefaultHttpClient();
-                Log.e(TAG, "doInBackground: params[0] >>>> " + params[0]);
                 HttpPost httpPost = new HttpPost(CensusConstants.BASE_URL + CensusConstants.UPLOAD_OFFLINE_MEMBERS_URL);
                 httpPost.setEntity(new StringEntity(params[0], "UTF-8"));
 
@@ -568,7 +611,6 @@ public class CommonUtils {
                 response = httpClient.execute(httpPost);
 //                sresponse = response.getEntity().toString();
                 sresponse = EntityUtils.toString(response.getEntity());
-                Log.e(TAG, "doInBackground: sresponse >>> " + sresponse);
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -587,12 +629,10 @@ public class CommonUtils {
                 String status = jsonObject.getString("status");
                 String status_code = jsonObject.getString("status_code");
                 String response = jsonObject.getString("response");
-                Log.e(TAG, "onPostExecute: result >>>> tttttttttttt : >>>>>>>>> " + result);
                 //{"status":"success","status_code":"1000","offline_ids":"12","response":"Add offline Supervisors Successful"}
                 if (status.equals("success") && status_code.equals("1000")) {
-                    String ids = jsonObject.getString("response");
-                    Log.e(TAG, "onPostExecute: ids are >>>>>>>> " + ids);
-//                        updateOfflineRecords(context, ids);
+                    String ids = jsonObject.getString("offline_ids");
+                    updateOfflineRecords(context, ids, "members");
                 } else {
                     Log.e(TAG, "onPostExecute: Some error in uploading the Profiles : " + result);
                 }

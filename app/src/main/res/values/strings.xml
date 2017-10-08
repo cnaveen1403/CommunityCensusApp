@@ -90,4 +90,5 @@
     <string name="start_phone_auth">Start</string>
     <string name="verify_phone_auth">Verify</string>
     <string name="resend_phone_auth">Resend</string>
+    <string name="notification">your offline data has been synced sucessfully.</string>
 </resources>

@@ -21,7 +21,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
-public class CensusService extends Service {
+public class CensusService1 extends Service {
     private static final String TAG = "CensusService";
 
     private boolean isRunning = false;
@@ -36,7 +36,7 @@ public class CensusService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         Log.e(TAG, "Service onStartCommand");
-        if (CommonUtils.isActiveNetwork(CensusService.this)) {
+        if (CommonUtils.isActiveNetwork(CensusService1.this)) {
             //Creating new thread for my service
             //Always write your long running tasks in a separate thread, to avoid ANR
             new Thread(new Runnable() {
@@ -73,7 +73,7 @@ public class CensusService extends Service {
     }
 
     public int getOfflineRecordsCount(String table_name) {
-        GDatabaseHelper dbHelper = GDatabaseHelper.getInstance(CensusService.this);
+        GDatabaseHelper dbHelper = GDatabaseHelper.getInstance(CensusService1.this);
         String countQuery = "SELECT  * FROM " + table_name + " WHERE `isSynced`='no'";
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         Cursor cursor = db.rawQuery(countQuery, null);
@@ -85,7 +85,7 @@ public class CensusService extends Service {
     }
 
     private void uploadOfflineSupervisors() {
-        final DbAsyncTask dbATask = new DbAsyncTask(CensusService.this, false, null);
+        final DbAsyncTask dbATask = new DbAsyncTask(CensusService1.this, false, null);
         DbParameter dbParams = new DbParameter();
         ArrayList<Object> parms = new ArrayList<Object>();
         parms.add("no");
@@ -101,8 +101,10 @@ public class CensusService extends Service {
 
             @Override
             public void execPostDbAction() {
+                Log.e(TAG, "uploadOfflineSupervisors : execPostDbAction: indide >>>>>>>>>>>>. ");
                 Cursor cur = dbAsyncParam.getQueryCursor();
                 if (cur == null) {
+                    Log.e(TAG, "execPostDbAction: Cursor is null  <<<<<<<<<<<<<<<<....>>>>>>>>>>>>>>>>>>");
                     return;
                 }
 
@@ -146,7 +148,8 @@ public class CensusService extends Service {
                     }
 
                     String jsonStr = finalObj.toString();
-                    new CommonUtils.uploadOfflineSupervisorAsyncTask(CensusService.this).execute(jsonStr);
+                    Log.e(TAG, "execPostDbAction: jsonString : >>>>>>>>>>>>> " + jsonStr);
+                    new CommonUtils.uploadOfflineSupervisorAsyncTask(CensusService1.this).execute(jsonStr);
                 }
 
                 cur.close();
@@ -163,7 +166,8 @@ public class CensusService extends Service {
     }
 
     private void uploadOfflineMembersToServer() {
-        final DbAsyncTask dbATask = new DbAsyncTask(CensusService.this, false, null);
+        Log.e(TAG, "uploadOfflineMembers : Inside >>>>>>>>>>>>>>>>>>>>>>>>>>>>. ");
+        final DbAsyncTask dbATask = new DbAsyncTask(CensusService1.this, false, null);
         DbParameter dbParams = new DbParameter();
         ArrayList<Object> parms = new ArrayList<Object>();
         parms.add("no");
@@ -178,8 +182,10 @@ public class CensusService extends Service {
 
             @Override
             public void execPostDbAction() {
+                Log.e(TAG, "uploadOfflineMembers : execPostDbAction: indide >>>>>>>>>>>>. ");
                 Cursor cur = dbAsyncParam.getQueryCursor();
                 if (cur == null) {
+                    Log.e(TAG, "uploadOfflineMembers : execPostDbAction: Cursor is null  <<<<<<<<<<<<<<<<....>>>>>>>>>>>>>>>>>>");
                     return;
                 }
 
@@ -230,7 +236,8 @@ public class CensusService extends Service {
                     }
 
                     String jsonStr = finalObj.toString();
-                    new CommonUtils.uploadOfflineMembersAsyncTask(CensusService.this).execute(jsonStr);
+                    Log.e(TAG, "execPostDbAction: " + "jsonString: " + jsonStr);
+                    new CommonUtils.uploadOfflineMembersAsyncTask(CensusService1.this).execute(jsonStr);
                 }
 
                 cur.close();
@@ -240,6 +247,7 @@ public class CensusService extends Service {
         dbAsyncParam.setDbAction(dbAction);
 
         try {
+            Log.e(TAG, "getOfllineMembers: inside try ");
             dbATask.execute(dbAsyncParam);
         } catch (Exception e) {
             e.printStackTrace();
