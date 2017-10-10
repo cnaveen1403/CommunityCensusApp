@@ -210,7 +210,6 @@ public class CensusService extends Service {
                             member.put("user_role", cur.getString(cur.getColumnIndex("user_role")));
                             member.put("rolebased_user_id", cur.getString(cur.getColumnIndex("role_based_user_id")));
                             member.put("created_by", cur.getString(cur.getColumnIndex("created_by")));
-//                            member.put("isSynced", cur.getString(cur.getColumnIndex("isSynced")));
 
                             //add the member to array
                             jsonArray.put(member);

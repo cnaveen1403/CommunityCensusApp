@@ -2,14 +2,23 @@
 <tabs>
     <tab
         id="@+id/tab_supervisors"
-        icon="@drawable/ic_supervisor_list"
-        title="Supervisors" />
+        icon="@drawable/ic_supervisor_white"
+        title="Supervisors"
+        inActiveColor="@color/dark_grey"
+        activeColor="@color/white"
+        barColorWhenSelected="@color/colorPrimary" />
     <tab
         id="@+id/tab_family_heads"
-        icon="@drawable/ic_family_head"
-        title="Family Heads" />
+        icon="@drawable/ic_family_head_white"
+        title="Family Heads"
+        inActiveColor="@color/dark_grey"
+        activeColor="@color/white"
+        barColorWhenSelected="@color/colorPrimary" />
     <tab
         id="@+id/tab_reports"
-        icon="@drawable/ic_report"
-        title="Reports" />
+        icon="@drawable/ic_report_white"
+        title="Reports"
+        inActiveColor="@color/dark_grey"
+        activeColor="@color/white"
+        barColorWhenSelected="@color/colorPrimary"/>
 </tabs>

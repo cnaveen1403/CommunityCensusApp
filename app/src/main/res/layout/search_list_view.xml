@@ -15,7 +15,9 @@
     <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/ImgVw_Letters"
         android:layout_width="32dp"
-        android:layout_height="32dp"/>
+        android:layout_height="32dp"
+        app:civ_border_color="@color/colorPrimary"
+        app:civ_border_width="1dp"/>
 
     <TextView
         android:id="@+id/TxtVw_DisplayName"

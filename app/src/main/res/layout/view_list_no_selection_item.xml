@@ -14,8 +14,10 @@
     <TextView
         android:id="@+id/TxtVw_NoSelection"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="40dp"
         android:layout_marginLeft="8dp"
+        android:gravity="center"
+        android:padding="8dp"
         android:layout_gravity="center_vertical"
         android:text="@string/no_selection"/>
 </LinearLayout>

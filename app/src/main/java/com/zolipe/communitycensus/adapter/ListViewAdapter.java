@@ -12,7 +12,6 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.zolipe.communitycensus.activity.AddMember;
 import com.zolipe.communitycensus.R;
 import com.zolipe.communitycensus.model.FamilyHead;
 
@@ -70,10 +69,10 @@ public class ListViewAdapter extends BaseAdapter implements Filterable, ISpinner
 //                    .thumbnail(0.5f)
                     .dontAnimate()
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(R.drawable.app_icon)
+                    .placeholder(R.drawable.ic_family_head)
                     .into(letters);
 //            letters.setImageDrawable(getTextDrawable(mList.get(position-1)));
-            dispalyName.setText(mList.get(position).getFirst_name());
+            dispalyName.setText(mList.get(position).getFirst_name() + " " + mList.get(position).getLast_name());
 //        }
         return view;
     }
@@ -92,10 +91,10 @@ public class ListViewAdapter extends BaseAdapter implements Filterable, ISpinner
                     .crossFade()
                     .dontAnimate()
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(R.drawable.app_icon)
+                    .placeholder(R.drawable.ic_family_head)
                     .into(letters);
 //            letters.setImageDrawable(getTextDrawable(mStrings.get(position-1)));
-            dispalyName.setText(mList.get(position).getFirst_name());
+            dispalyName.setText(mList.get(position).getFirst_name() + " " + mList.get(position).getLast_name());
 //        }
         return view;
     }

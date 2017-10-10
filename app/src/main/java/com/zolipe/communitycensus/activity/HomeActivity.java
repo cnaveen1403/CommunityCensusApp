@@ -310,6 +310,15 @@ public class HomeActivity extends AppCompatActivity
             }
         });
 
+        if (getIntent().getExtras() != null && getIntent().getExtras().containsKey("selected_tab")) {
+            String selectedTab= getIntent().getExtras().get("selected_tab").toString();
+            if (selectedTab.equals("supervisor"))
+                mBottomBar.selectTabAtPosition(0, true);
+
+            if (selectedTab.equals("members"))
+                mBottomBar.selectTabAtPosition(1, true);
+        }
+
         showcaseAdminTutorial();
     }
 
@@ -394,7 +403,7 @@ public class HomeActivity extends AppCompatActivity
         fab_add_supervisor.clearAnimation();
         fab_add_member.setVisibility(View.GONE);
         fab_add_supervisor.setVisibility(View.GONE);
-        commitFragment(new ReportsFragment());
+        commitFragment(new ReportsFragment(), "Report");
     }
 
     private void familyHeadsSelected() {
@@ -404,7 +413,7 @@ public class HomeActivity extends AppCompatActivity
         fab_add_supervisor.clearAnimation();
         fab_add_member.startAnimation(animation2);
         fab_add_member.clearAnimation();
-        commitFragment(new FamilyHeadsFragment());
+        commitFragment(new FamilyHeadsFragment(), "Member");
     }
 
     private void supervisorsSelected() {
@@ -414,10 +423,10 @@ public class HomeActivity extends AppCompatActivity
         fab_add_member.clearAnimation();
         fab_add_member.startAnimation(animation);
         fab_add_supervisor.startAnimation(animation2);
-        commitFragment(new SupervisorFragment());
+        commitFragment(new SupervisorFragment(), "Supervisor");
     }
 
-    private void commitFragment(Fragment fragment) {
+    private void commitFragment(Fragment fragment, String tag) {
         android.support.v4.app.FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
         if (previousTabPos > currentTabPos) {
             fragmentTransaction.setCustomAnimations(R.anim.slide_from_left, R.anim.slide_to_right);
@@ -425,7 +434,7 @@ public class HomeActivity extends AppCompatActivity
             fragmentTransaction.setCustomAnimations(R.anim.slide_from_right, R.anim.slide_to_left);
         }
 
-        fragmentTransaction.replace(R.id.bottombar_container, fragment);
+        fragmentTransaction.replace(R.id.bottombar_container, fragment, tag);
         fragmentTransaction.commit();
     }
 

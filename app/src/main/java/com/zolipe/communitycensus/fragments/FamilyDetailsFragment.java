@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -22,11 +24,18 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.zolipe.communitycensus.activity.AddFamilyMember;
 import com.zolipe.communitycensus.R;
+import com.zolipe.communitycensus.activity.FamilyDetailsActivity;
 import com.zolipe.communitycensus.activity.ViewMember;
 import com.zolipe.communitycensus.adapter.HorizantalListAdapter;
 import com.zolipe.communitycensus.app.AppData;
+import com.zolipe.communitycensus.database.DbAction;
+import com.zolipe.communitycensus.database.DbAsyncParameter;
+import com.zolipe.communitycensus.database.DbAsyncTask;
+import com.zolipe.communitycensus.database.DbParameter;
+import com.zolipe.communitycensus.database.GDatabaseHelper;
 import com.zolipe.communitycensus.model.FamilyHead;
 import com.zolipe.communitycensus.util.CensusConstants;
+import com.zolipe.communitycensus.util.CommonUtils;
 import com.zolipe.communitycensus.util.ConnectToServer;
 import com.zolipe.communitycensus.util.HorizontalListView;
 
@@ -37,6 +46,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -52,7 +62,8 @@ public class FamilyDetailsFragment extends Fragment {
     ScrollView sv_head_detail;
     RelativeLayout rl_family_members, rl_error;
     private String TAG = "FamilyDetailsFragment";
-    private String mFamilyHeadId;
+    private String mAadhaar;
+    FamilyHead mFamilyHead;
 
     public FamilyDetailsFragment() {
         // Required empty public constructor
@@ -75,7 +86,14 @@ public class FamilyDetailsFragment extends Fragment {
 
         familyMembersList = (HorizontalListView)rootView.findViewById(R.id.membersList);
 
-        new GetFamilyDetailsAsyncTask().execute(AppData.getString(mContext, CensusConstants.rolebased_user_id));
+        mAadhaar = AppData.getString(mContext, CensusConstants.aadhaar);
+
+        if(CommonUtils.isActiveNetwork(mContext)){
+            new GetFamilyDetailsAsyncTask().execute(mAadhaar);
+        }else {
+            showFamilyProfiles(mAadhaar);
+        }
+
         familyMembersList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -92,10 +110,11 @@ public class FamilyDetailsFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(mContext, AddFamilyMember.class);
-                String name = AppData.getString(mContext, CensusConstants.firstName) + " " + AppData.getString(mContext, CensusConstants.lastName);
-                intent.putExtra("member_id", mFamilyHeadId);
-                intent.putExtra("member_name", name);
-                intent.putExtra("member_url", AppData.getString(mContext, CensusConstants.image_url));
+                intent.putExtra("family_head", mFamilyHead);
+//                String name = AppData.getString(mContext, CensusConstants.firstName) + " " + AppData.getString(mContext, CensusConstants.lastName);
+//                intent.putExtra("member_id", mFamilyHeadId);
+//                intent.putExtra("member_name", name);
+//                intent.putExtra("member_url", AppData.getString(mContext, CensusConstants.image_url));
                 startActivityForResult(intent, 1);
                 mActivity.overridePendingTransition(R.anim.slide_from_right, R.anim.slide_to_left);
             }
@@ -104,11 +123,34 @@ public class FamilyDetailsFragment extends Fragment {
         btn_retry.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new GetFamilyDetailsAsyncTask().execute(AppData.getString(mContext, CensusConstants.rolebased_user_id));
+                new GetFamilyDetailsAsyncTask().execute(mAadhaar);
             }
         });
 
         return rootView;
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 1) {
+            if (resultCode == Activity.RESULT_OK) {
+                new GetFamilyDetailsAsyncTask().execute(mAadhaar);
+            }
+            if (resultCode == Activity.RESULT_CANCELED) {
+                //Write your code if there's no result
+            }
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (CommonUtils.isActiveNetwork(mContext)) {
+            showFamilyProfiles (mAadhaar);
+            new GetFamilyDetailsAsyncTask().execute(mAadhaar);
+        }else {
+            showFamilyProfiles (mAadhaar);
+        }
     }
 
     private class GetFamilyDetailsAsyncTask extends AsyncTask<String, Void, String> {
@@ -129,8 +171,9 @@ public class FamilyDetailsFragment extends Fragment {
         protected String doInBackground(String... params) {
             // params comes from the execute() call: params[0] is the url.
             List<NameValuePair> parms = new LinkedList<NameValuePair>();
-            String member_id = params[0];
-            parms.add(new BasicNameValuePair(CensusConstants.member_id, member_id));
+            String aadhar_num = params[0];
+            Log.e(TAG, "doInBackground: aadhar_num >>> " + aadhar_num);
+            parms.add(new BasicNameValuePair("head_aadhar_number", aadhar_num));
 
             /*String paramString = URLEncodedUtils.format(parms, "utf-8");
             String url = CensusConstants.BASE_URL + CensusConstants.FAMILY_HEADS_LIST_WITH_FAMILY_MEMBERS_URL;
@@ -153,63 +196,37 @@ public class FamilyDetailsFragment extends Fragment {
                 String response = jsonObject.getString("response");
 
                 if (status.equals("error") && status_code.equals("1003")) {
-                    sv_head_detail.setVisibility(View.GONE);
+                    /*sv_head_detail.setVisibility(View.GONE);
                     rl_family_members.setVisibility(View.GONE);
                     rl_error.setVisibility(View.VISIBLE);
-                    ((TextView) rootView.findViewById(R.id.tv_no_data)).setText(response);
+                    ((TextView) rootView.findViewById(R.id.tv_no_data)).setText(response);*/
+                    familyHeadsList.clear();
+                    sv_head_detail.setVisibility(View.VISIBLE);
+                    rl_family_members.setVisibility(View.VISIBLE);
+                    rl_error.setVisibility(View.GONE);
+                    showFamilyProfiles(mAadhaar);
                 } else if (status.equals("success") && status_code.equals("1000")) {
+                    familyHeadsList.clear();
                     sv_head_detail.setVisibility(View.VISIBLE);
                     rl_family_members.setVisibility(View.VISIBLE);
                     rl_error.setVisibility(View.GONE);
                     JSONArray jsonArray = jsonObject.getJSONArray("data");
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject explrObject = jsonArray.getJSONObject(i);
-                        String headId = explrObject.getString("member_id");
-                        String first_name = explrObject.getString("first_name");
-                        String last_name = explrObject.getString("last_name");
-                        String phone_number = explrObject.getString("phone_number");
-                        String aadhaar = explrObject.getString("aadhar_number");
-                        String email = explrObject.getString("email");
-                        String address = explrObject.getString("address");
-                        String gender = explrObject.getString("gender");
-                        String image_url = explrObject.getString("image_url");
-                        String age = explrObject.getString("age");
-                        String zipcode = explrObject.getString("zipcode");
-                        String relationship = explrObject.getString("relationship");
-                        String size = explrObject.getString("member_count");
-                        String dob = explrObject.getString("dob");
-                        String familyHeadId = explrObject.getString("family_head_id");
-                        String isFamilyHead = explrObject.getString("isfamily_head");
-
-                        if(isFamilyHead.equalsIgnoreCase("yes")){
-                            mFamilyHeadId = headId;
-                            ((TextView) rootView.findViewById(R.id.firstNameTV)).setText(first_name);
-                            ((TextView) rootView.findViewById(R.id.lastNameTV)).setText(last_name);
-                            ((TextView) rootView.findViewById(R.id.genderTV)).setText(gender);
-                            ((TextView) rootView.findViewById(R.id.dobTV)).setText(age);
-                            ((TextView) rootView.findViewById(R.id.phoneNumberTV)).setText(phone_number);
-                            ((TextView) rootView.findViewById(R.id.emailTV)).setText(email);
-                            ((TextView) rootView.findViewById(R.id.addressTV)).setText(address);
-                            ((TextView) rootView.findViewById(R.id.pinCodeTV)).setText(zipcode);
-                            Glide.with(mContext).load(image_url)
-                                    .crossFade()
-                                    .dontAnimate()
-                                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                                    .placeholder(R.drawable.app_icon)
-                                    .into((ImageView)rootView.findViewById(R.id.iv_header_image));
-                        }else{
-                            familyHeadsList.add(new FamilyHead(headId, first_name, last_name,
-                                    phone_number, aadhaar, email,
-                                    address, gender, image_url, age, relationship, size, zipcode
-                                    , dob, familyHeadId, isFamilyHead, "yes"));
-                        }
+                        CommonUtils.saveMembersToLocalDB(mContext, explrObject);
                     }
-                    familyMembersList.setAdapter(new HorizantalListAdapter(mContext, familyHeadsList));
+
+                    showFamilyProfiles(mAadhaar); //familyMembersList.setAdapter(new HorizantalListAdapter(mContext, familyHeadsList));
                 } else if (status.equals("success") && status_code.equals("1001")) {
-                    sv_head_detail.setVisibility(View.GONE);
+                    /*sv_head_detail.setVisibility(View.GONE);
                     rl_family_members.setVisibility(View.GONE);
                     rl_error.setVisibility(View.VISIBLE);
-                    tv_no_data.setText("Data Not available, Please add Members.");
+                    tv_no_data.setText("Data Not available, Please add Members.");*/
+                    familyHeadsList.clear();
+                    sv_head_detail.setVisibility(View.VISIBLE);
+                    rl_family_members.setVisibility(View.VISIBLE);
+                    rl_error.setVisibility(View.GONE);
+                    showFamilyProfiles(mAadhaar);
                 }
             } catch (JSONException jsonException) {
                 jsonException.printStackTrace();
@@ -219,5 +236,140 @@ public class FamilyDetailsFragment extends Fragment {
                 tv_no_data.setText("Server Not Responding !!! Please try again later.");
             }
         }
+    }
+
+    private void showFamilyProfiles(String head_aadhaar) {
+        final DbAsyncTask dbATask = new DbAsyncTask(mContext, false, null);
+        DbParameter dbParams = new DbParameter();
+        Log.e(TAG, "getFamilyProfiles: inside the offline fetch");
+        ArrayList<Object> parms = new ArrayList<Object>();
+        parms.add(head_aadhaar);
+        dbParams.addParamterList(parms);
+
+        final DbAsyncParameter dbAsyncParam = new DbAsyncParameter(R.string.sql_select_family_members,
+                DbAsyncTask.QUERY_TYPE_CURSOR, dbParams, null);
+        DbAction dbAction = new DbAction() {
+
+            @Override
+            public void execPreDbAction() {
+            }
+
+            @Override
+            public void execPostDbAction() {
+                Cursor cur = dbAsyncParam.getQueryCursor();
+                if (cur == null) {
+                    return;
+                }
+                Log.e(TAG, "execPostDbAction: cur COUNT >>>>>>>>>>> " + cur.getCount());
+                if (cur.moveToFirst()) {
+                    do {
+                        try {
+                            String headId = cur.getString(cur.getColumnIndex("familyHeadId"));
+                            String first_name = cur.getString(cur.getColumnIndex("first_name"));
+                            String last_name = cur.getString(cur.getColumnIndex("last_name"));
+                            String phone_number = cur.getString(cur.getColumnIndex("phone_number"));
+                            String aadhaar = cur.getString(cur.getColumnIndex("aadhaar"));
+                            String email = cur.getString(cur.getColumnIndex("email"));
+                            String address = cur.getString(cur.getColumnIndex("address"));
+                            String gender = cur.getString(cur.getColumnIndex("gender"));
+                            String image_url = cur.getString(cur.getColumnIndex("image_url"));
+                            String age = cur.getString(cur.getColumnIndex("age"));
+                            String relationship = cur.getString(cur.getColumnIndex("relationship"));
+                            String size = cur.getString(cur.getColumnIndex("family_size"));
+                            String zipcode = cur.getString(cur.getColumnIndex("zipcode"));
+                            String dob = cur.getString(cur.getColumnIndex("dob"));
+                            String familyHeadId = cur.getString(cur.getColumnIndex("familyHeadId"));
+                            String isFamilyHead = cur.getString(cur.getColumnIndex("isFamilyHead"));
+                            String isSynced = cur.getString(cur.getColumnIndex("isSynced"));
+//                            Log.e(TAG, "execPostDbAction: first_name >> " + first_name);
+//                            Log.e(TAG, "execPostDbAction: last_name >> " + last_name);
+//                            Log.e(TAG, "execPostDbAction: aadhaar >> " + aadhaar);
+
+                            if (isFamilyHead.equalsIgnoreCase("yes")) {
+                                ((TextView) rootView.findViewById(R.id.firstNameTV)).setText(first_name);
+                                ((TextView) rootView.findViewById(R.id.lastNameTV)).setText(last_name);
+                                ((TextView) rootView.findViewById(R.id.genderTV)).setText(gender);
+                                ((TextView) rootView.findViewById(R.id.dobTV)).setText(age);
+                                ((TextView) rootView.findViewById(R.id.phoneNumberTV)).setText(phone_number);
+                                ((TextView) rootView.findViewById(R.id.emailTV)).setText(email);
+                                ((TextView) rootView.findViewById(R.id.addressTV)).setText(address);
+                                ((TextView) rootView.findViewById(R.id.pinCodeTV)).setText(zipcode);
+                                Glide.with(mContext).load(image_url)
+                                        .crossFade()
+                                        .dontAnimate()
+                                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                                        .placeholder(R.drawable.app_icon)
+                                        .into((ImageView)rootView.findViewById(R.id.iv_header_image));
+
+                                mFamilyHead = new FamilyHead(headId, first_name, last_name,
+                                        phone_number, aadhaar, email, address, gender, image_url,
+                                        age, "Self", size, zipcode, dob, familyHeadId, isFamilyHead, isSynced);
+                            } else {
+                                String relation = getRelationName(relationship);
+                                if (familyHeadsList.size() == 0) {
+                                    familyHeadsList.add(new FamilyHead(headId, first_name, last_name,
+                                            phone_number, aadhaar, email, address, gender, image_url,
+                                            age, relation, size, zipcode, dob, familyHeadId, isFamilyHead, isSynced));
+                                } else {
+                                    boolean bStatus = true;
+                                    Iterator<FamilyHead> iter = familyHeadsList.iterator();
+                                    while (iter.hasNext()) {
+                                        Log.d(TAG, "============ Inside if condition iterator ============= ");
+                                        FamilyHead obj = iter.next();
+                                        if (aadhaar.equals(obj.getAadhaar())) {
+                                            bStatus = false;
+                                        }
+                                    }
+                                    Log.d(TAG, "bStatus >>>> " + bStatus);
+                                    if (bStatus) {
+                                        familyHeadsList.add(new FamilyHead(headId, first_name, last_name,
+                                                phone_number, aadhaar, email, address, gender, image_url,
+                                                age, relation, size, zipcode, dob, familyHeadId, isFamilyHead, isSynced));
+                                    }
+                                }
+
+                               /* familyHeadsList.add(new FamilyHead(headId, first_name, last_name,
+                                        phone_number, aadhaar, email, address, gender, image_url,
+                                        age, relation, size, zipcode, dob, familyHeadId, isFamilyHead, isSynced));*/
+                            }
+                        } catch (Exception e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                    }
+                    while (cur.moveToNext());
+                    HorizantalListAdapter horizantalListAdapter = new HorizantalListAdapter(mContext, familyHeadsList);
+                    familyMembersList.setAdapter(horizantalListAdapter);
+                    horizantalListAdapter.notifyDataSetChanged();
+                }
+
+                cur.close();
+            }
+        };
+
+        dbAsyncParam.setDbAction(dbAction);
+
+        try {
+            dbATask.execute(dbAsyncParam);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String getRelationName (String relation_id){
+        String relation = "";
+        GDatabaseHelper dbHelper = GDatabaseHelper.getInstance(mContext);
+        String query = "SELECT relation_name FROM RelationsInfo WHERE relation_id = " + relation_id;
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Cursor cursor = db.rawQuery(query, null);
+        if(cursor.moveToFirst()){
+            do{
+                relation = cursor.getString(cursor.getColumnIndex("relation_name"));
+            }while(cursor.moveToNext());
+        }
+        cursor.close();
+
+        // return count
+        return relation;
     }
 }

@@ -98,12 +98,22 @@
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="8dp"
                 android:gravity="center_horizontal"
-                app:BoarderColor="@color/hint_color"
+                app:RevealViewBackgroundColor="@android:color/holo_blue_light"
+                app:SearchViewBackgroundColor="@android:color/holo_blue_light"
+                app:StartSearchTintColor="@android:color/white"
+                app:DoneSearchTintColor="@android:color/white"
+                app:BoarderColor="@color/colorPrimary"
                 app:BordersSize="2dp"
                 app:RevealEmptyText="Select Family Head"
+                app:ItemsDivider="@color/hint_color"
+                app:DividerHeight="0.5dp"
+                app:NoItemsFoundText="No data available."
                 app:ShowBorders="true"
+                app:KeepLastSearch="true"
+                app:paddingStart="8dp"
                 android:visibility="gone"
                 app:SpinnerExpandHeight="250dp" />
+
             <fr.ganfra.materialspinner.MaterialSpinner
                 android:id="@+id/spinner_relations"
                 android:layout_width="fill_parent"

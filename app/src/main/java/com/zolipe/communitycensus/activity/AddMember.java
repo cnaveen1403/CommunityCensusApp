@@ -282,10 +282,8 @@ public class AddMember extends AppCompatActivity {
             public void onClick(View v) {
                 if (isValidForm()) {
                     if (CommonUtils.isActiveNetwork(mContext)) {
-                        Log.e(TAG, "onClick: isActive Network");
                         new AddMemberAsyncTask().execute();
                     } else {
-                        Log.e(TAG, "onClick: Network inactive >>>>>>>>>>>>>>");
                         saveToLocalDB(true, "");
                     }
                 }

@@ -1,18 +1,13 @@
 package com.zolipe.communitycensus.activity;
 
-import android.app.Dialog;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-
-import android.app.FragmentManager;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import com.zolipe.communitycensus.R;
 import com.zolipe.communitycensus.fragments.EditMemberFragment;
@@ -103,7 +98,7 @@ public class ViewMember extends AppCompatActivity {
                 fragmentTransaction.replace(R.id.fl_view_member, editFragment);
                 fragmentTransaction.commit();
 
-                toolbar.setTitle("Edit Profile");
+                toolbar.setTitle("Edit Member");
                 break;
             case R.id.action_done:
                 updateMember ();

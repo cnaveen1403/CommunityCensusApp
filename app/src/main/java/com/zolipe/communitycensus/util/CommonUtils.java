@@ -1,5 +1,7 @@
 package com.zolipe.communitycensus.util;
 
+import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -13,6 +15,8 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
@@ -26,6 +30,7 @@ import com.zolipe.communitycensus.database.DbAsyncParameter;
 import com.zolipe.communitycensus.database.DbAsyncTask;
 import com.zolipe.communitycensus.database.DbParameter;
 import com.zolipe.communitycensus.database.GDatabaseHelper;
+import com.zolipe.communitycensus.fragments.SupervisorFragment;
 import com.zolipe.communitycensus.model.State;
 
 import org.apache.http.HttpResponse;
@@ -474,21 +479,69 @@ public class CommonUtils {
         }
     }
 
-    private static void updateOfflineRecords(Context context, String ids, String userDataType) {
-        String[] array = ids.split(",");
-        for (int i = 0; 1 < array.length; i++) {
-            if (userDataType.equals("supervisor")) {
-                updateSupervisorRecordInLocalDB(context, Integer.parseInt(array[i]));
-            }else if (userDataType.equals("member")){
-                updateMemberRecordInLocalDB(context, Integer.parseInt(array[i]));
-            }
+    public static class uploadOfflineMembersAsyncTask extends AsyncTask<String, Void, String> {
+        Context context;
+
+        uploadOfflineMembersAsyncTask(Context c) {
+            this.context = c;
         }
 
-        if (userDataType.equals("supervisor"))
-            showNotification(context, "Your offline data of supervisor has been synced successfully");
+        @Override
+        protected String doInBackground(String... params) {
+            String sresponse = "empty response !!!!!!!!!";
+            // params comes from the execute() call: params[0] is the url.
+            try {
+                HttpClient httpClient = new DefaultHttpClient();
+                HttpPost httpPost = new HttpPost(CensusConstants.BASE_URL + CensusConstants.UPLOAD_OFFLINE_MEMBERS_URL);
+                httpPost.setEntity(new StringEntity(params[0], "UTF-8"));
 
-        if (userDataType.equals("member"))
-            showNotification(context, "offline Members data has been synced successfully");
+                httpPost.setHeader("Content-Type", "application/json");
+                HttpResponse response = null;
+                response = httpClient.execute(httpPost);
+                sresponse = EntityUtils.toString(response.getEntity());
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            Log.e(TAG, "doInBackground: sresponse for members >>> " + sresponse);
+            return sresponse;
+        }
+
+        // onPostExecute displays the results of the AsyncTask.
+        @Override
+        protected void onPostExecute(String result) {
+            try {
+                JSONObject jsonObject = new JSONObject(result);
+                String status = jsonObject.getString("status");
+                String status_code = jsonObject.getString("status_code");
+                //{"status":"success","status_code":"1000","offline_ids":"4","response":"Add offline Members Successful"}
+                if (status.equals("success") && status_code.equals("1000")) {
+                    Log.e(TAG, "onPostExecute: Inside Success uploadOfflineMembersAsyncTask [][][][][][][][[][][][][][][][][][][][ ");
+                    String ids = jsonObject.getString("offline_ids");
+                    updateOfflineRecords(context, ids, "members");
+                } else {
+                    Log.e(TAG, "onPostExecute: Some error in uploading the Profiles : " + result);
+                }
+            } catch (JSONException jsonException) {
+                jsonException.printStackTrace();
+            }
+        }
+    }
+
+    private static void updateOfflineRecords(Context context, String ids, String userDataType) {
+        String[] array = ids.split(",");
+
+        if (userDataType.equals("supervisor")) {
+            for (int i = 0; i < array.length; i++) {
+                updateSupervisorRecordInLocalDB(context, Integer.parseInt(array[i]));
+            }
+            showNotification(context, "Your offline data of supervisor has been synced successfully", userDataType);
+        } else if (userDataType.equals("members")) {
+            for (int i = 0; i < array.length; i++) {
+                updateMemberRecordInLocalDB(context, Integer.parseInt(array[i]));
+            }
+            showNotification(context, "offline Members data has been synced successfully", userDataType);
+        }
     }
 
     private static void updateSupervisorRecordInLocalDB(Context context, int id) {
@@ -507,12 +560,20 @@ public class CommonUtils {
         cursor.close();
     }
 
-    public static void showNotification(Context context, String message) {
+    public static void showNotification(Context context, String message, String userDataType) {
         Log.e(TAG, "showNotification: INSIDE THIS METHOD ");
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
         builder.setSmallIcon(R.drawable.logo_blue);
         Intent intent = new Intent(context, HomeActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+        if (userDataType.equals("supervisor"))
+            intent.putExtra("selected_tab", userDataType);
+
+        if (userDataType.equals("members"))
+            intent.putExtra("selected_tab", userDataType);
+
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
         builder.setContentIntent(pendingIntent);
         builder.setLargeIcon(BitmapFactory.decodeResource(context.getResources(), R.drawable.logo_blue));
@@ -521,6 +582,7 @@ public class CommonUtils {
         builder.setSubText("Tap to view");
         builder.setPriority(Notification.PRIORITY_HIGH);
         builder.setDefaults(Notification.DEFAULT_ALL);
+        builder.setAutoCancel(true);
 
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(NOTIFICATION_SERVICE);
 
@@ -590,57 +652,6 @@ public class CommonUtils {
         }
     }
 
-    public static class uploadOfflineMembersAsyncTask extends AsyncTask<String, Void, String> {
-        Context context;
-
-        uploadOfflineMembersAsyncTask(Context c) {
-            this.context = c;
-        }
-
-        @Override
-        protected String doInBackground(String... params) {
-            String sresponse = "empty response !!!!!!!!!";
-            // params comes from the execute() call: params[0] is the url.
-            try {
-                HttpClient httpClient = new DefaultHttpClient();
-                HttpPost httpPost = new HttpPost(CensusConstants.BASE_URL + CensusConstants.UPLOAD_OFFLINE_MEMBERS_URL);
-                httpPost.setEntity(new StringEntity(params[0], "UTF-8"));
-
-                httpPost.setHeader("Content-Type", "application/json");
-                HttpResponse response = null;
-                response = httpClient.execute(httpPost);
-//                sresponse = response.getEntity().toString();
-                sresponse = EntityUtils.toString(response.getEntity());
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return sresponse;
-//            List<NameValuePair> parms = new LinkedList<NameValuePair>();
-//            parms.add(new BasicNameValuePair("", ));
-//            return new ConnectToServer().getDataFromUrl(CensusConstants.BASE_URL + CensusConstants.UPLOAD_OFFLINE_SUPERVISORS_URL, parms);//HttpUtils.doPost(map, BureauConstants.BASE_URL+BureauConstants.REGISTER_URL);
-        }
-
-        // onPostExecute displays the results of the AsyncTask.
-        @Override
-        protected void onPostExecute(String result) {
-            try {
-                JSONObject jsonObject = new JSONObject(result);
-                String status = jsonObject.getString("status");
-                String status_code = jsonObject.getString("status_code");
-                String response = jsonObject.getString("response");
-                //{"status":"success","status_code":"1000","offline_ids":"12","response":"Add offline Supervisors Successful"}
-                if (status.equals("success") && status_code.equals("1000")) {
-                    String ids = jsonObject.getString("offline_ids");
-                    updateOfflineRecords(context, ids, "members");
-                } else {
-                    Log.e(TAG, "onPostExecute: Some error in uploading the Profiles : " + result);
-                }
-            } catch (JSONException jsonException) {
-                jsonException.printStackTrace();
-            }
-        }
-    }
 
     public static class getHelperTableAsyncTask extends AsyncTask<Void, Void, String> {
         Context mContext;

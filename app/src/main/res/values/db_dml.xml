@@ -15,6 +15,8 @@
     <string name="sql_insert_city_info">" INSERT OR IGNORE INTO `CityInfo` (`city_name`, `state_id`, `city_id`) VALUES (?,?,?);
         UPDATE `CityInfo` SET `city_name`=?, `state_id`=? WHERE  `city_id` = ?</string>
 
+    <string name="sql_update_member">" UPDATE `MemberInfo` SET `first_name`=?,`last_name`=?,`phone_number`=?,`email`=?,`address`=?, `gender`=?, `image_url`=?, `image`=?, `zipcode`=?, `dob`=?, `familyHeadId`=?,`isFamilyHead`=?, `isSynced`=?, `image_type`=?, `updated_by`=? WHERE `aadhaar` = ?</string>
+
     <string name="sql_select_all_members">"<![CDATA[SELECT `first_name`,`last_name`,`phone_number`,`email`,`address`, `gender`, `age`, `image_url`,  `image`, `relationship`, `family_size`, `zipcode`, `dob`, `familyHeadId`,`isFamilyHead`, `isSynced`, `city_id`, `state_id`, `country`, `image_type`, `user_role`, `role_based_user_id`, `created_by`, `aadhaar` FROM `MemberInfo`;]]>"</string>
     <string name="sql_select_offline_members">"<![CDATA[SELECT `id` AS offline_id, `isFamilyHead`, `relationship` AS `relationship_id`, `first_name`,`last_name`, `gender`, `dob`, `phone_number`, `familyHeadId` AS `head_aadhar_number`, `aadhaar` , `email`, `address`, `city_id`, `state_id`, `country`, `zipcode`, `image` AS `user_avatar` , `image_type`, `user_role`, `role_based_user_id`, `created_by` FROM `MemberInfo` WHERE `isSynced` = ?;]]>"</string>
     <string name="sql_select_all_supervisors">"<![CDATA[SELECT `first_name`,`last_name`,`phone_number`,`email`,`address`, `gender`, `age`, `image_url`,  `image`, `zipcode`, `dob`, `member_count`, `isSynced`, `city_id`, `state_id`, `country`, `image_type`, `user_role`, `isSynced`, `created_by`, `aadhaar` FROM `SupervisorInfo`;]]>"</string>

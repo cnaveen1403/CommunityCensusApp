@@ -228,7 +228,7 @@ public class LoginSignupActivity extends Activity {
             }
 
             // Surface the result to your user in an appropriate way.
-            Toast.makeText(this,toastMessage,Toast.LENGTH_LONG).show();
+//            Toast.makeText(this,toastMessage,Toast.LENGTH_LONG).show();
         }
     }
 

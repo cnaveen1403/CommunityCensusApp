@@ -252,11 +252,10 @@ public class FamilyDetailsActivity extends AppCompatActivity {
                         for (int i = 0; i < jsonArray.length(); i++) {
                             JSONObject explrObject = jsonArray.getJSONObject(i);
                             String isFamilyHead = explrObject.getString("isfamily_head");
-                            if (isFamilyHead.equals("no")) {
+//                            if (isFamilyHead.equals("no")) {
                                 CommonUtils.saveMembersToLocalDB(mContext, explrObject);
-                            }
+//                            }
                         }
-
 
                         showFamilyProfiles (mFamilyHead.getAadhaar());
                     } else if (status.equals("success") && status_code.equals("1001")) {

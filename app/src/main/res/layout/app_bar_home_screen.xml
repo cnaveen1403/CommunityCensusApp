@@ -39,8 +39,8 @@
             android:layout_height="60dp"
             android:layout_alignParentBottom="true"
             app:bb_tabXmlResource="@xml/bottombar_tabs"
-            app:bb_activeTabColor="@color/colorPrimary"
-            app:bb_tabletMode="false" />
+            app:bb_activeTabColor="@color/white"
+            app:bb_tabletMode="false"/>
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/fab_add_member"
@@ -60,6 +60,7 @@
             android:src="@drawable/ic_add_supervisor"
             app:backgroundTint="@color/error_color"
             android:layout_alignParentRight="true"
+            android:scaleType="center"
             android:layout_above="@+id/bottomBar"/>
 
     </RelativeLayout>

@@ -43,10 +43,15 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.zolipe.communitycensus.R;
 import com.zolipe.communitycensus.app.AppData;
+import com.zolipe.communitycensus.database.DbAction;
+import com.zolipe.communitycensus.database.DbAsyncParameter;
+import com.zolipe.communitycensus.database.DbAsyncTask;
+import com.zolipe.communitycensus.database.DbParameter;
 import com.zolipe.communitycensus.model.FamilyHead;
 import com.zolipe.communitycensus.permissions.PermissionsActivity;
 import com.zolipe.communitycensus.permissions.PermissionsChecker;
 import com.zolipe.communitycensus.util.CensusConstants;
+import com.zolipe.communitycensus.util.CommonUtils;
 import com.zolipe.communitycensus.util.ConnectToServer;
 import com.zolipe.communitycensus.util.SelectDocument;
 
@@ -58,6 +63,7 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
@@ -75,6 +81,7 @@ public class EditMemberFragment extends Fragment {
     static EditText et_first_name;
     static EditText et_last_name;
     static EditText et_member_dob;
+    static EditText et_phone;
     static EditText et_aadhaar;
     static EditText et_email;
     static EditText et_address;
@@ -114,11 +121,11 @@ public class EditMemberFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         rootView = inflater.inflate(R.layout.fragment_edit_member, container, false);
-        init (rootView);
+        init(rootView);
         return rootView;
     }
 
-    private void init (View rootView){
+    private void init(View rootView) {
         mContext = this.getActivity();
         mActivity = getActivity();
         checker = new PermissionsChecker(mContext);
@@ -134,14 +141,14 @@ public class EditMemberFragment extends Fragment {
         et_last_name = (EditText) rootView.findViewById(R.id.et_last_name);
         et_member_dob = (EditText) rootView.findViewById(R.id.et_member_dob);
         et_aadhaar = (EditText) rootView.findViewById(R.id.et_aadhaar);
-//        et_phone_no = (EditText) rootView.findViewById(R.id.et_phone_no);
+        et_phone = (EditText) rootView.findViewById(R.id.et_phone_no);
         et_email = (EditText) rootView.findViewById(R.id.et_email);
         et_address = (EditText) rootView.findViewById(R.id.et_address);
         et_zipcode = (EditText) rootView.findViewById(R.id.et_zipcode);
         image_male = (ImageView) rootView.findViewById(R.id.ivMale);
         image_female = (ImageView) rootView.findViewById(R.id.ivFemale);
 
-        toggleButton_gender = (ToggleButton)rootView.findViewById(R.id.toggleButton_gender);
+        toggleButton_gender = (ToggleButton) rootView.findViewById(R.id.toggleButton_gender);
 
         /*----- Toggle button clicked ----- */
         toggleButton_gender.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -203,7 +210,7 @@ public class EditMemberFragment extends Fragment {
             }
         });
 
-        setProfileData ();
+        setProfileData();
     }
 
     private void showDOBDialogue(View v) {
@@ -394,8 +401,12 @@ public class EditMemberFragment extends Fragment {
     }
 
     public static void updateProfile() {
-        if (isValidData ()) {
-            new UpdateAsyncTask().execute();
+        if (isValidData()) {
+            if (CommonUtils.isActiveNetwork(mContext))
+                new UpdateAsyncTask().execute();
+            else {
+                saveToLocalDB(true, "", "No Internet Connectivity !!! meanwhile we saved your data in local database.");
+            }
         }
     }
 
@@ -413,6 +424,10 @@ public class EditMemberFragment extends Fragment {
 
     public static String getAadhaar() {
         return et_aadhaar.getText().toString();
+    }
+
+    public static String getPhoneNumber() {
+        return et_phone.getText().toString();
     }
 
     public static String getEmail() {
@@ -438,6 +453,17 @@ public class EditMemberFragment extends Fragment {
         return bStatus;
     }
 
+    private static boolean isValidPhoneNumber() {
+        boolean bStatus = true;
+        if (getPhoneNumber().length() < 10) {
+            bStatus = false;
+        } else if (getPhoneNumber().equals("")) {
+            bStatus = false;
+        }
+
+        return bStatus;
+    }
+
     private static boolean isValidData() {
         boolean bStatus = true;
         if (getFname().equals("")) {
@@ -448,10 +474,14 @@ public class EditMemberFragment extends Fragment {
             bStatus = false;
             et_last_name.requestFocus();
             et_last_name.setError("Please enter last name");
-        } else if (!isValidAadhar()) {
+        } /*else if (!isValidAadhar()) {
             bStatus = false;
             et_aadhaar.requestFocus();
             et_aadhaar.setError("Please enter valid Aadhaar Number");
+        } */ else if (!isValidPhoneNumber()) {
+            bStatus = false;
+            et_aadhaar.requestFocus();
+            et_aadhaar.setError("Please enter valid Phone Number");
         } else if (getDateOfBirth().equals("")) {
             bStatus = false;
             et_member_dob.requestFocus();
@@ -480,19 +510,17 @@ public class EditMemberFragment extends Fragment {
     private void setProfileData() {
         Bundle bundle = this.getArguments();
         member = bundle.getParcelable("Member");
-//        if (bundle != null) {
-//        }
 
         et_first_name.setText(member.getFirst_name());
         et_last_name.setText(member.getLast_name());
 //        Log.e(TAG, "setProfileData: " + member.getDob());
 
         String date = member.getDob();
-        String [] array = date.split("-");
-        String formattedDate = array[2] + "-" + array [1] + "-" + array [0];
-        Log.e(TAG, "setProfileData: new date " + formattedDate);
+        String[] array = date.split("-");
+        String formattedDate = array[2] + "-" + array[1] + "-" + array[0];
 
         et_member_dob.setText(formattedDate);
+        et_phone.setText(member.getPhone_number());
         et_aadhaar.setText(member.getAadhaar());
         et_email.setText(member.getEmail());
         et_address.setText(member.getAddress());
@@ -519,6 +547,76 @@ public class EditMemberFragment extends Fragment {
             toggleButton_gender.setChecked(false);
         } else {
             toggleButton_gender.setChecked(true);
+        }
+
+        et_aadhaar.setEnabled(false);
+    }
+
+    private static void saveToLocalDB(final Boolean isOffline, final String img_url, final String message) {
+
+        final DbAsyncTask dbATask = new DbAsyncTask(mContext, false, null);
+        DbParameter dbParams_duty = new DbParameter();
+
+        ArrayList<Object> parms = new ArrayList<Object>();
+        Log.e(TAG, "saveToLocalDB: member.getFamilyHeadId() >>> " + member.getFamilyHeadId());
+        parms.add(getFname());
+        parms.add(getLname());
+        parms.add(getPhoneNumber());
+        parms.add(getEmail());
+        parms.add(getAddress());
+        parms.add(mGender);
+        parms.add(img_url);
+        parms.add(isOffline ? mEncodedData:"");
+        parms.add(getZipcode());
+        parms.add(getDateOfBirth());
+        parms.add(member.getFamilyHeadId());
+        parms.add(member.getIsFamilyHead());
+        parms.add(isOffline ? "no" : "yes");
+        parms.add(mImageType);
+        parms.add(AppData.getString(mContext, CensusConstants.rolebased_user_id));
+        parms.add(getAadhaar());
+
+
+        dbParams_duty.addParamterList(parms);
+
+        final DbAsyncParameter dbAsyncParam_duty = new DbAsyncParameter(R.string.sql_update_member,
+                DbAsyncTask.QUERY_TYPE_BULK_UPDATE, dbParams_duty, null);
+
+        DbAction dbAction_duty = new DbAction() {
+            @Override
+            public void execPreDbAction() {
+            }
+
+            @Override
+            public void execPostDbAction() {
+
+
+                final Dialog customDialog = new Dialog(mContext);
+                customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                customDialog.setContentView(R.layout.simple_alert);
+                customDialog.setCancelable(false);
+
+                ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Success");
+                ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(message);
+                TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
+                text.setText("OK");
+
+                text.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        customDialog.dismiss();
+                    }
+                });
+                customDialog.show();
+            }
+        };
+
+        dbAsyncParam_duty.setDbAction(dbAction_duty);
+
+        try {
+            dbATask.execute(dbAsyncParam_duty);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -583,7 +681,8 @@ public class EditMemberFragment extends Fragment {
                 if (status.equals("success")) {
 
                     if (status.equalsIgnoreCase(CensusConstants.SUCCESS) && status_code.equals("1000")) {
-                        final Dialog customDialog = new Dialog(mContext);
+                        saveToLocalDB(false, jsonObject.getString("image_url"), "Member data has been updated successfully");
+                        /*final Dialog customDialog = new Dialog(mContext);
                         customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
                         customDialog.setContentView(R.layout.simple_alert);
                         ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Success");
@@ -595,10 +694,12 @@ public class EditMemberFragment extends Fragment {
                             @Override
                             public void onClick(View v) {
                                 customDialog.dismiss();
+
+
 //                                overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
                             }
                         });
-                        customDialog.show();
+                        customDialog.show();*/
                     } else if (status.equalsIgnoreCase(CensusConstants.SUCCESS) && status_code.equals("1001")) {
                         final Dialog customDialog = new Dialog(mContext);
                         customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -619,7 +720,7 @@ public class EditMemberFragment extends Fragment {
                         });
                         customDialog.show();
                     }
-                }else if (status.equals("error")) {
+                } else if (status.equals("error")) {
                     final Dialog customDialog = new Dialog(mContext);
                     customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
                     customDialog.setContentView(R.layout.simple_alert);
@@ -632,6 +733,7 @@ public class EditMemberFragment extends Fragment {
                         @Override
                         public void onClick(View v) {
                             customDialog.dismiss();
+                            saveToLocalDB(true, "", "Server Error. your data has been saved in local Database");
 //                            overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
                         }
                     });
@@ -652,6 +754,7 @@ public class EditMemberFragment extends Fragment {
                     @Override
                     public void onClick(View v) {
                         customDialog.dismiss();
+                        saveToLocalDB(true, "", "something gone wrong!!! your data has been saved in local Database");
 //                        overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
                     }
                 });

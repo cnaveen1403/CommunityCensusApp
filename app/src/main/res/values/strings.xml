@@ -52,7 +52,7 @@
     <string name="search_spinner_hint">Filter</string>
     <string name="txt_state">State</string>
     <string name="txt_city">City</string>
-    <string name="no_selection">No Selection</string>
+    <string name="no_selection">No data available</string>
     <string name="title_activity_add_family_members">AddFamilyMembers</string>
     <string name="title_activity_family_head_list">Family Heads</string>
     <string name="title_activity_family_members">Family Members</string>
