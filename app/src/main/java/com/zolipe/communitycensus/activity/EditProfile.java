@@ -37,6 +37,7 @@ import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.bumptech.glide.Glide;
@@ -44,10 +45,15 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.zolipe.communitycensus.R;
 import com.zolipe.communitycensus.adapter.StateListAdapter;
 import com.zolipe.communitycensus.app.AppData;
+import com.zolipe.communitycensus.database.DbAction;
+import com.zolipe.communitycensus.database.DbAsyncParameter;
+import com.zolipe.communitycensus.database.DbAsyncTask;
+import com.zolipe.communitycensus.database.DbParameter;
 import com.zolipe.communitycensus.model.State;
 import com.zolipe.communitycensus.permissions.PermissionsActivity;
 import com.zolipe.communitycensus.permissions.PermissionsChecker;
 import com.zolipe.communitycensus.util.CensusConstants;
+import com.zolipe.communitycensus.util.CommonUtils;
 import com.zolipe.communitycensus.util.ConnectToServer;
 import com.zolipe.communitycensus.util.SelectDocument;
 
@@ -82,7 +88,7 @@ public class EditProfile extends AppCompatActivity {
     Uri mCapturedImageURI;
     String fileName = "temp.jpg";
     private static String mImageType = "jpeg";
-    private String realPath, mStateId = "-1", mCityId = "-1", mGender = "male", mEncodedData = "";
+    private String realPath, mStateId = "0", mCityId = "-1", mGender = "male", mEncodedData = "";
 
     private static EditText et_first_name, et_last_name, et_dob, et_aadhaar, et_email, et_address, et_zipcode;
     ToggleButton toggleButton_gender;
@@ -201,7 +207,10 @@ public class EditProfile extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (isValidated()) {
-                    updateProfile();
+                    if (CommonUtils.isActiveNetwork(mContext))
+                        updateProfile();
+                    else
+                        Toast.makeText(mContext, "Check your internet connectivity to update profile", Toast.LENGTH_LONG).show();
                 }
             }
         });
@@ -236,9 +245,10 @@ public class EditProfile extends AppCompatActivity {
     private void setProfileData() {
         String gender = AppData.getString(mContext, CensusConstants.gender);
 
+        spinner2.setSelection(Integer.parseInt(AppData.getString(mContext, CensusConstants.state_id)));
         et_first_name.setText(AppData.getString(mContext, CensusConstants.firstName));
         et_last_name.setText(AppData.getString(mContext, CensusConstants.lastName));
-        Log.e(TAG, "setProfileData: Date >>>>>>>>> " + AppData.getString(mContext, CensusConstants.dob));
+//        Log.e(TAG, "setProfileData: Date >>>>>>>>> " + AppData.getString(mContext, CensusConstants.dob));
         et_dob.setText(AppData.getString(mContext, CensusConstants.dob));
 //        et_phone_no.setText(AppData.getString(mContext, CensusConstants.phoneNumber));
         et_aadhaar.setText(AppData.getString(mContext, CensusConstants.aadhaar));
@@ -259,13 +269,28 @@ public class EditProfile extends AppCompatActivity {
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .placeholder(R.drawable.app_icon)
                 .into(iv_add_image);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                    //Your logic that service will perform will be placed here
+                    //In this example we are just looping and waits for 1000 milliseconds in each loop.
+                try {
+                    Thread.sleep(3000);
+                    spinner_city.setSelection(Integer.parseInt(AppData.getString(mContext, CensusConstants.city_id)));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     private void initStateSpinner() {
+        mStateList = CommonUtils.getStatesList(mContext);
         spinner2 = (MaterialSpinner) findViewById(R.id.spinner2);
-        prepareStateList();
         mStateListAdapter = new StateListAdapter(mContext, mStateList);
         spinner2.setAdapter(mStateListAdapter);
+        mStateListAdapter.notifyDataSetChanged();
         spinner2.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
@@ -273,8 +298,9 @@ public class EditProfile extends AppCompatActivity {
                 if (position != -1) {
                     String state_id = mStateList.get(position).getId();
                     mStateId = state_id;
-                    new GetCityListAsync().execute(state_id);
                     resetCitySpinner();
+                    prepareCityList();
+                    mCityListAdapter.notifyDataSetChanged();
 //                    Log.d(LOG_TAG, "Item on position " + position + " : " + state_id + " Selected");
 //                    Log.d(LOG_TAG, "Item on position " + position + " : " + mStateList.get(position).getName() + " Selected");
                 }
@@ -297,6 +323,7 @@ public class EditProfile extends AppCompatActivity {
 
     private void initCitySpinner() {
         spinner_city = (MaterialSpinner) findViewById(R.id.spinner_city);
+        prepareCityList();
         mCityListAdapter = new StateListAdapter(mContext, mCityList);
         spinner_city.setAdapter(mCityListAdapter);
         spinner_city.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -318,39 +345,64 @@ public class EditProfile extends AppCompatActivity {
         });
     }
 
-    private void prepareStateList() {
-        try {
-            String state_list = AppData.getString(mContext, "state_list_data");
-            Log.e(TAG, "prepareStateList: state_list >>>  " + state_list);
-            JSONArray jsonArray = new JSONArray(state_list);
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject explrObject = jsonArray.getJSONObject(i);
-                String id = explrObject.getString("state_id");
-                String name = explrObject.getString("state_name");
+    private void prepareCityList() {
+        final DbAsyncTask dbATask = new DbAsyncTask(mContext, false, null);
+        DbParameter dbParams = new DbParameter();
 
-                if (mStateList.size() == 0) {
-                    mStateList.add(new State(id, name));
-                } else {
-                    boolean bStatus = true;
-                    Iterator<State> iter = mStateList.iterator();
-                    while (iter.hasNext()) {
-                        Log.d(TAG, "============ Inside if condition iterator ============= ");
-                        State obj = iter.next();
-                        if (id.equals(obj.getId())) {
-                            bStatus = false;
-                        }
-                    }
-                    Log.d(TAG, "bStatus >>>> " + bStatus);
-                    if (bStatus) {
-//                                Log.d("SuperFragment", "************ Object Has been added successfully ************ ");
-                        mStateList.add(new State(id, name));
-                    }
-                }
+        ArrayList<Object> parms = new ArrayList<Object>();
+        parms.add(mStateId);
+        dbParams.addParamterList(parms);
+        final DbAsyncParameter dbAsyncParam = new DbAsyncParameter(R.string.sql_select_cities, DbAsyncTask.QUERY_TYPE_CURSOR, dbParams, null);
+
+        DbAction dbAction = new DbAction() {
+            @Override
+            public void execPreDbAction() {
             }
 
-//            mStateListAdapter.notifyDataSetChanged();
-        } catch (JSONException jsonException) {
-            jsonException.printStackTrace();
+            @Override
+            public void execPostDbAction() {
+                Cursor cur = dbAsyncParam.getQueryCursor();
+                if (cur == null) {
+                    return;
+                }
+
+                if (cur.moveToFirst()) {
+                    do {
+                        String id = cur.getString(cur.getColumnIndex("city_id"));
+                        String name = cur.getString(cur.getColumnIndex("city_name"));
+
+                        if (mCityList.size() == 0) {
+                            mCityList.add(new State(id, name));
+                        } else {
+                            boolean bStatus = true;
+                            Iterator<State> iter = mCityList.iterator();
+                            while (iter.hasNext()) {
+//                                    Log.d(TAG, "============ Inside if condition iterator ============= ");
+                                State obj = iter.next();
+                                if (id.equals(obj.getId())) {
+                                    bStatus = false;
+                                }
+                            }
+                            Log.d(TAG, "bStatus >>>> " + bStatus);
+                            if (bStatus) {
+//                                Log.d("SuperFragment", "************ Object Has been added successfully ************ ");
+                                mCityList.add(new State(id, name));
+                            }
+                        }
+                    }
+                    while (cur.moveToNext());
+                    mCityListAdapter.notifyDataSetChanged();
+                }
+                cur.close();
+            }
+        };
+
+        dbAsyncParam.setDbAction(dbAction);
+
+        try {
+            dbATask.execute(dbAsyncParam);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -631,83 +683,13 @@ public class EditProfile extends AppCompatActivity {
         int pos = 0;
         for (int i = 0; i < mStateList.size(); i++) {
             String temp_id = mStateList.get(i).getId();
-            if (temp_id.equals(state_id)){
+            if (temp_id.equals(state_id)) {
                 pos = i + 1;
                 break;
             }
         }
 
         return pos;
-    }
-
-    private class GetCityListAsync extends AsyncTask<String, Void, String> {
-        @Override
-        protected void onPreExecute() {
-        }
-
-        @Override
-        protected String doInBackground(String... params) {
-            String state_id = params[0];
-            List<NameValuePair> parms = new LinkedList<NameValuePair>();
-            parms.add(new BasicNameValuePair(CensusConstants.state_id, state_id));
-            return new ConnectToServer().getDataFromUrl(CensusConstants.BASE_URL + CensusConstants.GET_CITY_LIST_URL, parms);
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            final Dialog customDialog = new Dialog(mContext);
-            customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-            customDialog.setContentView(R.layout.simple_alert);
-
-            Log.d(TAG, "on postexecute result >>> " + result);
-            try {
-                JSONObject jsonObject = new JSONObject(result);
-                String status = jsonObject.getString("status");
-                String status_code = jsonObject.getString("status_code");
-                String response = jsonObject.getString("response");
-
-                if (status.equals("success") && status_code.equals("1003")) {
-                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
-                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
-                    TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                    text.setText("OK");
-
-                    text.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            customDialog.dismiss();
-                        }
-                    });
-                    customDialog.show();
-                } else if (status.equals("success") && status_code.equals("1000")) {
-                    JSONArray jsonArray = jsonObject.getJSONArray("data");
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject explrObject = jsonArray.getJSONObject(i);
-                        String id = explrObject.getString("city_id");
-                        String name = explrObject.getString("city_name");
-                        mCityList.add(new State(id, name));
-                    }
-
-                    mCityListAdapter.notifyDataSetChanged();
-                    int pos = getPosition(mCityList, AppData.getString(mContext, CensusConstants.city_id));
-                    spinner_city.setSelection(pos);
-                }
-            } catch (JSONException jsonException) {
-                jsonException.printStackTrace();
-                ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Alert");
-                ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText("Server not Responding, please try again after sometime.");
-                TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                text.setText("OK");
-
-                text.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        customDialog.dismiss();
-                    }
-                });
-                customDialog.show();
-            }
-        }
     }
 
     private void updateProfile() {
@@ -774,10 +756,10 @@ public class EditProfile extends AppCompatActivity {
             if (userRole.equals("admin")) {
                 URL = CensusConstants.BASE_URL + CensusConstants.UPDATE_ADMIN_INFO_URL;
                 parms.add(new BasicNameValuePair("user_id", AppData.getString(mContext, CensusConstants.rolebased_user_id)));
-            }else if (userRole.equals("supervisor")){
+            } else if (userRole.equals("supervisor")) {
                 URL = CensusConstants.BASE_URL + CensusConstants.UPDATE_SUPERVISOR_INFO_URL;
                 parms.add(new BasicNameValuePair("supervisor_id", AppData.getString(mContext, CensusConstants.rolebased_user_id)));
-            }else if (userRole.equals("member")){
+            } else if (userRole.equals("member")) {
                 URL = CensusConstants.BASE_URL + CensusConstants.UPDATE_MEMBER_INFO_URL;
                 parms.add(new BasicNameValuePair("member_id", AppData.getString(mContext, CensusConstants.rolebased_user_id)));
             }
@@ -812,7 +794,7 @@ public class EditProfile extends AppCompatActivity {
                             @Override
                             public void onClick(View v) {
                                 customDialog.dismiss();
-                                saveAppData ();
+                                saveAppData();
                                 finishAffinity();
                                 Intent intent = new Intent(mContext, HomeActivity.class);
                                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -841,7 +823,7 @@ public class EditProfile extends AppCompatActivity {
                         });
                         customDialog.show();
                     }
-                }else if (status.equals("error")) {
+                } else if (status.equals("error")) {
                     final Dialog customDialog = new Dialog(mContext);
                     customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
                     customDialog.setContentView(R.layout.simple_alert);

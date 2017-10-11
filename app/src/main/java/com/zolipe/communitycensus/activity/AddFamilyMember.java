@@ -84,7 +84,8 @@ public class AddFamilyMember extends AppCompatActivity {
 
     private static String TAG = "AddFamilyMember";
 
-    private static final String[] PERMISSIONS_READ_STORAGE = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.CAMERA};
+    private static final String[] PERMISSIONS_READ_STORAGE = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.CAMERA};
     private static StateListAdapter mStateListAdapter;
     private static ArrayList<State> mStateList = new ArrayList<>();
     private static StateListAdapter mRelationsAdapter;

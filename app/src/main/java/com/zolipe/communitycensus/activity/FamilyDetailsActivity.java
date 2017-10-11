@@ -230,7 +230,7 @@ public class FamilyDetailsActivity extends AppCompatActivity {
             Log.e(TAG, "onPostExecute: result >>>> "  + result );
             progressDialog.dismiss();
             if (result.equals("") || result.equals(null) || result.isEmpty()) {
-                showServerError();
+//                showServerError();
             } else {
                 try {
                     JSONObject jsonObject = new JSONObject(result);
@@ -239,19 +239,12 @@ public class FamilyDetailsActivity extends AppCompatActivity {
                     String response = jsonObject.getString("response");
 
                     if (status.equals("error") && status_code.equals("1003")) {
-                        sv_head_detail.setVisibility(View.GONE);
-                        rl_family_members.setVisibility(View.GONE);
-                        rl_error.setVisibility(View.VISIBLE);
-                        tv_no_data.setText(response);
+                        showFamilyProfiles(mFamilyHead.getAadhaar());
                     } else if (status.equals("success") && status_code.equals("1000")) {
-                        familyHeadsList.clear();
-                        sv_head_detail.setVisibility(View.VISIBLE);
-                        rl_family_members.setVisibility(View.VISIBLE);
-                        rl_error.setVisibility(View.GONE);
                         JSONArray jsonArray = jsonObject.getJSONArray("data");
                         for (int i = 0; i < jsonArray.length(); i++) {
                             JSONObject explrObject = jsonArray.getJSONObject(i);
-                            String isFamilyHead = explrObject.getString("isfamily_head");
+//                            String isFamilyHead = explrObject.getString("isfamily_head");
 //                            if (isFamilyHead.equals("no")) {
                                 CommonUtils.saveMembersToLocalDB(mContext, explrObject);
 //                            }
@@ -259,14 +252,15 @@ public class FamilyDetailsActivity extends AppCompatActivity {
 
                         showFamilyProfiles (mFamilyHead.getAadhaar());
                     } else if (status.equals("success") && status_code.equals("1001")) {
-                        sv_head_detail.setVisibility(View.GONE);
+                        /*sv_head_detail.setVisibility(View.GONE);
                         rl_family_members.setVisibility(View.GONE);
                         rl_error.setVisibility(View.VISIBLE);
-                        tv_no_data.setText("Data Not available, Please add Members.");
+                        tv_no_data.setText("Data Not available, Please add Members.");*/
+                        showFamilyProfiles(mFamilyHead.getAadhaar());
                     }
                 } catch (JSONException jsonException) {
                     jsonException.printStackTrace();
-                    showServerError();
+//                    showServerError();
                 }
             }
         }
@@ -275,7 +269,7 @@ public class FamilyDetailsActivity extends AppCompatActivity {
     private void showFamilyProfiles(String head_aadhaar) {
         final DbAsyncTask dbATask = new DbAsyncTask(mContext, false, null);
         DbParameter dbParams = new DbParameter();
-        Log.e(TAG, "getFamilyProfiles: inside the offline fetch");
+        Log.e(TAG, "showFamilyProfiles: inside the offline fetch");
         ArrayList<Object> parms = new ArrayList<Object>();
         parms.add(head_aadhaar);
         dbParams.addParamterList(parms);
@@ -294,7 +288,19 @@ public class FamilyDetailsActivity extends AppCompatActivity {
                 if (cur == null) {
                     return;
                 }
-                Log.e(TAG, "execPostDbAction: cur COUNT >>>>>>>>>>> " + cur.getCount());
+
+                if(cur.getCount() > 0){
+                    familyHeadsList.clear();
+                    sv_head_detail.setVisibility(View.VISIBLE);
+                    rl_family_members.setVisibility(View.VISIBLE);
+                    rl_error.setVisibility(View.GONE);
+                }else {
+                    sv_head_detail.setVisibility(View.GONE);
+                    rl_family_members.setVisibility(View.GONE);
+                    rl_error.setVisibility(View.VISIBLE);
+                    tv_no_data.setText("Data Not available, Please add Members.");
+                }
+
                 if (cur.moveToFirst()) {
                     do {
                         try {
@@ -315,6 +321,8 @@ public class FamilyDetailsActivity extends AppCompatActivity {
                             String familyHeadId = cur.getString(cur.getColumnIndex("familyHeadId"));
                             String isFamilyHead = cur.getString(cur.getColumnIndex("isFamilyHead"));
                             String isSynced = cur.getString(cur.getColumnIndex("isSynced"));
+                            String state_id = cur.getString(cur.getColumnIndex("state_id"));
+                            String city_id = cur.getString(cur.getColumnIndex("city_id"));
 //                            Log.e(TAG, "execPostDbAction: first_name >> " + first_name);
 //                            Log.e(TAG, "execPostDbAction: last_name >> " + last_name);
 //                            Log.e(TAG, "execPostDbAction: aadhaar >> " + aadhaar);
@@ -337,9 +345,10 @@ public class FamilyDetailsActivity extends AppCompatActivity {
                             } else {
                                 String relation = getRelationName(relationship);
                                 if (familyHeadsList.size() == 0) {
-                                    familyHeadsList.add(new FamilyHead(headId, first_name, last_name,
+                                    familyHeadsList.add(new FamilyHead(first_name, last_name,
                                             phone_number, aadhaar, email, address, gender, image_url,
-                                            age, relation, size, zipcode, dob, familyHeadId, isFamilyHead, isSynced));
+                                            age, relation, size, zipcode, dob, familyHeadId, isFamilyHead
+                                            , isSynced, state_id, city_id));
                                 } else {
                                     boolean bStatus = true;
                                     Iterator<FamilyHead> iter = familyHeadsList.iterator();
@@ -352,9 +361,10 @@ public class FamilyDetailsActivity extends AppCompatActivity {
                                     }
                                     Log.d(TAG, "bStatus >>>> " + bStatus);
                                     if (bStatus) {
-                                        familyHeadsList.add(new FamilyHead(headId, first_name, last_name,
+                                        familyHeadsList.add(new FamilyHead(first_name, last_name,
                                                 phone_number, aadhaar, email, address, gender, image_url,
-                                                age, relation, size, zipcode, dob, familyHeadId, isFamilyHead, isSynced));
+                                                age, relation, size, zipcode, dob, familyHeadId, isFamilyHead
+                                                , isSynced, state_id, city_id));
                                     }
                                 }
 

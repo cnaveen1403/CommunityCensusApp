@@ -220,7 +220,7 @@
             android:layout_below="@+id/tv_monthly_summary"
             android:layout_alignParentRight="true"
             android:gravity="end"
-            android:background="@color/error_color"
+            android:background="@color/paytm_color"
             android:layout_marginLeft="8dp"
             android:layout_marginRight="8dp"
             android:layout_marginTop="8dp">
@@ -229,7 +229,7 @@
                 android:layout_height="wrap_content"
                 android:text="Month : "
                 android:layout_gravity="center"
-                android:textColor="@color/white"
+                android:textColor="@color/colorPrimary"
                 android:paddingLeft="8dp"
                 android:textSize="16sp"/>
             <Spinner

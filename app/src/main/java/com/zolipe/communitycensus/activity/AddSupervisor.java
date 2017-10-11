@@ -55,6 +55,7 @@ import com.zolipe.communitycensus.util.ConnectToServer;
 import com.zolipe.communitycensus.util.SelectDocument;
 
 import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -333,95 +334,6 @@ public class AddSupervisor extends AppCompatActivity {
         }
     }
 
-    /*private void getAllSupervisors() {
-        final DbAsyncTask dbATask = new DbAsyncTask(mContext, false, null);
-        DbParameter dbParams = new DbParameter();
-
-        ArrayList<Object> parms = new ArrayList<Object>();
-
-//        parms.add(StoredData.getString(mContext,"EmployeeId"));
-        dbParams.addParamterList(parms);
-
-        final DbAsyncParameter dbAsyncParam = new DbAsyncParameter(R.string.sql_select_all_supervisors, DbAsyncTask.QUERY_TYPE_CURSOR, dbParams, null);
-
-        DbAction dbAction = new DbAction() {
-
-            @Override
-            public void execPreDbAction() {
-
-            }
-
-            @Override
-            public void execPostDbAction() {
-
-                Cursor cur = dbAsyncParam.getQueryCursor();
-                if (cur == null) {
-                    return;
-                }
-
-                if (cur.moveToFirst()) {
-                    JSONArray jsonArray = new JSONArray();
-
-                    do {
-                        try {
-                            JSONObject member = new JSONObject();
-                            member.put("first_name", cur.getString(cur.getColumnIndex("first_name")));
-                            member.put("last_name", cur.getString(cur.getColumnIndex("last_name")));
-                            member.put("phone_number", cur.getString(cur.getColumnIndex("phone_number")));
-                            member.put("email", cur.getString(cur.getColumnIndex("email")));
-                            member.put("address", cur.getString(cur.getColumnIndex("address")));
-                            member.put("gender", cur.getString(cur.getColumnIndex("gender")));
-                            member.put("image_url", cur.getString(cur.getColumnIndex("image_url")));
-                            member.put("image", cur.getBlob(cur.getColumnIndex("image")));
-                            member.put("relationship", cur.getString(cur.getColumnIndex("relationship")));
-                            member.put("zipcode", cur.getString(cur.getColumnIndex("zipcode")));
-                            member.put("dob", cur.getString(cur.getColumnIndex("dob")));
-                            member.put("familyHeadId", cur.getString(cur.getColumnIndex("familyHeadId")));
-                            member.put("isFamilyHead", cur.getString(cur.getColumnIndex("isFamilyHead")));
-                            member.put("city_id", cur.getString(cur.getColumnIndex("city_id")));
-                            member.put("state_id", cur.getString(cur.getColumnIndex("state_id")));
-                            member.put("country", cur.getString(cur.getColumnIndex("country")));
-                            member.put("image_type", cur.getString(cur.getColumnIndex("image_type")));
-                            member.put("user_role", cur.getString(cur.getColumnIndex("user_role")));
-                            member.put("role_based_user_id", cur.getString(cur.getColumnIndex("role_based_user_id")));
-                            member.put("created_by", cur.getString(cur.getColumnIndex("created_by")));
-                            member.put("aadhaar", cur.getString(cur.getColumnIndex("aadhaar")));
-                            member.put("isSynced", cur.getString(cur.getColumnIndex("isSynced")));
-
-                            //add the member to array
-                            jsonArray.put(member);
-
-                        } catch (JSONException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
-                    }
-                    while (cur.moveToNext());
-
-                    JSONObject finalObj = new JSONObject();
-                    try {
-                        finalObj.put("members_data", jsonArray);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-
-                    String jsonStr = finalObj.toString();
-                    Log.e(TAG, "execPostDbAction: " + "jsonString: " + jsonStr);
-                }
-
-                cur.close();
-            }
-        };
-
-        dbAsyncParam.setDbAction(dbAction);
-
-        try {
-            dbATask.execute(dbAsyncParam);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }*/
-
     private void hideKeyboard() {
         InputMethodManager inputManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         inputManager.hideSoftInputFromWindow(this.getCurrentFocus().getWindowToken(),
@@ -458,14 +370,10 @@ public class AddSupervisor extends AppCompatActivity {
         spinner_state.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
-//                Log.d(LOG_TAG, "Item On Position >> "+ position);
                 if (position != -1) {
                     mStateId = mStateList.get(position).getId();
                     resetCitySpinner();
                     prepareCityList();
-//                    mCityList = CommonUtils.getCitiesList(mContext, mStateId);
-//                    Log.e(TAG, "onItemSelected: mCityList size >>> " + mCityList.size());
-//                    mCityListAdapter.notifyDataSetChanged();
                 }
             }
 
@@ -485,7 +393,6 @@ public class AddSupervisor extends AppCompatActivity {
     }
 
     private void initCitySpinner() {
-//        mCityList = CommonUtils.getCitiesList(mContext, mStateId);
         prepareCityList();
         spinner_city = (MaterialSpinner) findViewById(R.id.spinner_city);
         mCityListAdapter = new StateListAdapter(mContext, mCityList);
@@ -505,66 +412,6 @@ public class AddSupervisor extends AppCompatActivity {
             }
         });
     }
-
-    /*private void prepareStateList() {
-        final DbAsyncTask dbATask = new DbAsyncTask(mContext, false, null);
-        DbParameter dbParams = new DbParameter();
-
-        ArrayList<Object> parms = new ArrayList<Object>();
-        dbParams.addParamterList(parms);
-        final DbAsyncParameter dbAsyncParam = new DbAsyncParameter(R.string.sql_select_states_info,
-                DbAsyncTask.QUERY_TYPE_CURSOR, dbParams, null);
-
-        DbAction dbAction = new DbAction() {
-            @Override
-            public void execPreDbAction() {
-            }
-
-            @Override
-            public void execPostDbAction() {
-                Cursor cur = dbAsyncParam.getQueryCursor();
-                if (cur == null) {
-                    return;
-                }
-
-                if (cur.moveToFirst()) {
-                    do {
-                        String id = cur.getString(cur.getColumnIndex("state_id"));
-                        String name = cur.getString(cur.getColumnIndex("state_name"));
-                        if (mStateList.size() == 0) {
-                            mStateList.add(new State(id, name));
-                        } else {
-                            boolean bStatus = true;
-                            Iterator<State> iter = mStateList.iterator();
-                            while (iter.hasNext()) {
-//                                    Log.d(TAG, "============ Inside if condition iterator ============= ");
-                                State obj = iter.next();
-                                if (id.equals(obj.getId())) {
-                                    bStatus = false;
-                                }
-                            }
-                            Log.d(TAG, "bStatus >>>> " + bStatus);
-                            if (bStatus) {
-//                                Log.d("SuperFragment", "************ Object Has been added successfully ************ ");
-                                mStateList.add(new State(id, name));
-                            }
-                        }
-                    }
-                    while (cur.moveToNext());
-                    mStateListAdapter.notifyDataSetChanged();
-                }
-                cur.close();
-            }
-        };
-
-        dbAsyncParam.setDbAction(dbAction);
-
-        try {
-            dbATask.execute(dbAsyncParam);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }*/
 
     private void openFileChooserDialog() {
         final Dialog dialog = new Dialog(AddSupervisor.this);
@@ -956,6 +803,12 @@ public class AddSupervisor extends AppCompatActivity {
             parms.add(new BasicNameValuePair(CensusConstants.userAvatar, mEncodedData));
             parms.add(new BasicNameValuePair(CensusConstants.imageType, mImageType));
             parms.add(new BasicNameValuePair(CensusConstants.createdBy, AppData.getString(mContext, CensusConstants.userid)));
+
+            String paramString = URLEncodedUtils.format(parms, "utf-8");
+            String url = CensusConstants.BASE_URL + CensusConstants.ADD_SUPERVISOR_URL;
+            url += "?";
+            url += paramString;
+            Log.e(TAG, "url sending is >>> " + url);
 
             return new ConnectToServer().getDataFromUrl(CensusConstants.BASE_URL + CensusConstants.ADD_SUPERVISOR_URL, parms);//HttpUtils.doPost(map, BureauConstants.BASE_URL+BureauConstants.REGISTER_URL);
         }

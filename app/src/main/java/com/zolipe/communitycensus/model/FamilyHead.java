@@ -4,7 +4,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 public class FamilyHead implements Parcelable {
-    private String id;
     private String first_name;
     private String last_name;
     private String phone_number;
@@ -21,14 +20,15 @@ public class FamilyHead implements Parcelable {
     private String familyHeadId;
     private String isFamilyHead;
     private String isSynced;
+    private String state_id;
+    private String city_id;
 
-    public FamilyHead(String memberId, String first_name, String last_name,
+    public FamilyHead(String first_name, String last_name,
                       String phone, String aadhaar, String email,
                       String address, String gender, String url,
                       String age, String relationship, String family_size,
                       String zipcode, String dob, String familyHeadId, String isFamilyHead,
-                      String isSynced) {
-        this.id = memberId;
+                      String isSynced, String state_id, String city_id) {
         this.first_name = first_name;
         this.last_name = last_name;
         this.phone_number = phone;
@@ -45,10 +45,11 @@ public class FamilyHead implements Parcelable {
         this.familyHeadId = familyHeadId;
         this.isFamilyHead = isFamilyHead;
         this.isSynced = isSynced;
+        this.state_id = state_id;
+        this.city_id = city_id;
     }
 
     protected FamilyHead(Parcel in) {
-        id = in.readString();
         first_name = in.readString();
         last_name = in.readString();
         phone_number = in.readString();
@@ -93,14 +94,6 @@ public class FamilyHead implements Parcelable {
 
     public void setImage_url(String image_url) {
         this.image_url = image_url;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     public String getAadhaar() {
@@ -215,6 +208,22 @@ public class FamilyHead implements Parcelable {
         this.isSynced = isSynced;
     }
 
+    public String getState_id() {
+        return state_id;
+    }
+
+    public void setState_id(String state_id) {
+        this.state_id = state_id;
+    }
+
+    public String getCity_id() {
+        return city_id;
+    }
+
+    public void setCity_id(String city_id) {
+        this.city_id = city_id;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -222,7 +231,6 @@ public class FamilyHead implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(id);
         dest.writeString(first_name);
         dest.writeString(last_name);
         dest.writeString(phone_number);

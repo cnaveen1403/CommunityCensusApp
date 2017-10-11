@@ -135,6 +135,8 @@ public class ReportsFragment extends Fragment {
 //
 //                Log.e(TAG, "onItemSelected: " + getDates(year, position, day));
                 new GetDayWiseSummaryAsyncTask().execute(getDates(year, position, day));
+                ((TextView) parent.getChildAt(0)).setTextColor(Color.WHITE);
+//                ((TextView) parent.getChildAt(0)).setTextSize(5);
             }
 
             @Override

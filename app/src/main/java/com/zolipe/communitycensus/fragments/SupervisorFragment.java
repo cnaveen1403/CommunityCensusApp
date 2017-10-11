@@ -28,7 +28,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.zolipe.communitycensus.R;
-import com.zolipe.communitycensus.activity.SupervisorDetail;
+import com.zolipe.communitycensus.activity.ViewSupervisor;
 import com.zolipe.communitycensus.adapter.SupervisorAdapter;
 import com.zolipe.communitycensus.app.AppData;
 import com.zolipe.communitycensus.database.DbAction;
@@ -44,7 +44,6 @@ import com.zolipe.communitycensus.util.DividerItemDecoration;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -146,7 +145,7 @@ public class SupervisorFragment extends Fragment implements SupervisorListItemCl
         else
             showSupervisors();
 
-            getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+        getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
         getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
         return rootView;
@@ -158,7 +157,7 @@ public class SupervisorFragment extends Fragment implements SupervisorListItemCl
 
     @Override
     public void onClick(View view, SupervisorObj obj) {
-        Intent intent = new Intent(mContext, SupervisorDetail.class);
+        Intent intent = new Intent(mContext, ViewSupervisor.class);
         intent.putExtra("SupervisorObj", obj);
         startActivity(intent);
         getActivity().overridePendingTransition(R.anim.slide_from_right, R.anim.slide_to_left);
@@ -282,11 +281,14 @@ public class SupervisorFragment extends Fragment implements SupervisorListItemCl
                             String zipcode = cur.getString(cur.getColumnIndex("zipcode"));
                             String dob = cur.getString(cur.getColumnIndex("dob"));
                             String isSynced = cur.getString(cur.getColumnIndex("isSynced"));
+                            String city_id = cur.getString(cur.getColumnIndex("city_id"));
+                            String state_id = cur.getString(cur.getColumnIndex("state_id"));
 
                             if (supervisorList.size() == 0) {
                                 supervisorList.add(new SupervisorObj(sup_id, first_name, last_name,
                                         phone_number, aadhaar, email, address,
-                                        age, gender, image_url, zipcode, count, dob, isSynced));
+                                        age, gender, image_url, zipcode, count, dob, isSynced,
+                                        city_id, state_id));
                             } else {
                                 boolean bStatus = true;
                                 Iterator<SupervisorObj> iter = supervisorList.iterator();
@@ -303,7 +305,8 @@ public class SupervisorFragment extends Fragment implements SupervisorListItemCl
 //                                Log.d("SuperFragment", "************ Object Has been added successfully ************ ");
                                     supervisorList.add(new SupervisorObj(sup_id, first_name, last_name,
                                             phone_number, aadhaar, email, address,
-                                            age, gender, image_url, zipcode, count, dob, isSynced));
+                                            age, gender, image_url, zipcode, count, dob, isSynced,
+                                            city_id, state_id));
                                 }
                             }
                         } catch (Exception e) {

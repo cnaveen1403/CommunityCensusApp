@@ -1,5 +1,6 @@
 package com.zolipe.communitycensus.fragments;
 
+
 import android.Manifest;
 import android.app.Activity;
 import android.app.DatePickerDialog;
@@ -47,7 +48,7 @@ import com.zolipe.communitycensus.database.DbAction;
 import com.zolipe.communitycensus.database.DbAsyncParameter;
 import com.zolipe.communitycensus.database.DbAsyncTask;
 import com.zolipe.communitycensus.database.DbParameter;
-import com.zolipe.communitycensus.model.FamilyHead;
+import com.zolipe.communitycensus.model.SupervisorObj;
 import com.zolipe.communitycensus.permissions.PermissionsActivity;
 import com.zolipe.communitycensus.permissions.PermissionsChecker;
 import com.zolipe.communitycensus.util.CensusConstants;
@@ -73,9 +74,12 @@ import de.hdodenhof.circleimageview.CircleImageView;
 import static android.app.Activity.RESULT_OK;
 import static com.bumptech.glide.load.resource.bitmap.TransformationUtils.rotateImage;
 
-public class EditMemberFragment extends Fragment {
+/**
+ * A simple {@link Fragment} subclass.
+ */
+public class EditSupervisorFragment extends Fragment {
 
-    private static String TAG = "EditMember";
+    private static String TAG = "EditSupervisorFragment";
 
     View rootView;
     static EditText et_first_name;
@@ -91,7 +95,7 @@ public class EditMemberFragment extends Fragment {
     static Context mContext;
     Activity mActivity;
 
-    static FamilyHead member;
+    static SupervisorObj mSupervisorObj;
     static String emailPattern = "[a-zA-Z0-9._-]+@[a-z]+\\.+[a-z]+";
     private static String mGender = "male", mEncodedData = "";
     private ImageView image_male, image_female;
@@ -107,20 +111,16 @@ public class EditMemberFragment extends Fragment {
     private static String mImageType = "jpeg", realPath;
     Animation animation;
 
-    public EditMemberFragment() {
+    public EditSupervisorFragment() {
         // Required empty public constructor
     }
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        rootView = inflater.inflate(R.layout.fragment_edit_member, container, false);
+        rootView = inflater.inflate(R.layout.fragment_edit_supervisor, container, false);
         init(rootView);
         return rootView;
     }
@@ -216,7 +216,7 @@ public class EditMemberFragment extends Fragment {
     private void showDOBDialogue(View v) {
         InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(v.getWindowToken(), 1);
-        DialogFragment dFragment = new DatePickerFragment();
+        DialogFragment dFragment = new EditMemberFragment.DatePickerFragment();
         dFragment.show(mActivity.getFragmentManager(), "date picker");
     }
 
@@ -509,31 +509,31 @@ public class EditMemberFragment extends Fragment {
 
     private void setProfileData() {
         Bundle bundle = this.getArguments();
-        member = bundle.getParcelable("Member");
+        mSupervisorObj = bundle.getParcelable("Supervisor");
 
-        et_first_name.setText(member.getFirst_name());
-        et_last_name.setText(member.getLast_name());
+        et_first_name.setText(mSupervisorObj.getFirst_name());
+        et_last_name.setText(mSupervisorObj.getLast_name());
 //        Log.e(TAG, "setProfileData: " + member.getDob());
 
-        String date = member.getDob();
+        String date = mSupervisorObj.getDob();
         String[] array = date.split("-");
         String formattedDate = array[2] + "-" + array[1] + "-" + array[0];
 
         et_member_dob.setText(formattedDate);
-        et_phone.setText(member.getPhone_number());
-        et_aadhaar.setText(member.getAadhaar());
-        et_email.setText(member.getEmail());
-        et_address.setText(member.getAddress());
-        et_zipcode.setText(member.getZipcode());
+        et_phone.setText(mSupervisorObj.getPhone_number());
+        et_aadhaar.setText(mSupervisorObj.getAadhaar());
+        et_email.setText(mSupervisorObj.getEmail());
+        et_address.setText(mSupervisorObj.getAddress());
+        et_zipcode.setText(mSupervisorObj.getZipcode());
 
-        Glide.with(this).load(member.getImage_url())
+        Glide.with(this).load(mSupervisorObj.getImage_url())
                 .crossFade()
                 .dontAnimate()
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .placeholder(R.drawable.ic_supervisor_list)
                 .into(ivProfileImage);
 
-        String gender = member.getGender();
+        String gender = mSupervisorObj.getGender();
 
 
         /*try {
@@ -558,10 +558,10 @@ public class EditMemberFragment extends Fragment {
         DbParameter dbParams_duty = new DbParameter();
 
         ArrayList<Object> parms = new ArrayList<Object>();
-        Log.e(TAG, "saveToLocalDB: member.getFamilyHeadId() >>> " + member.getFamilyHeadId());
+        Log.e(TAG, "saveToLocalDB: mSupervisorObj.getFamilyHeadId() >>> " + mSupervisorObj.getAadhaar());
         parms.add(getFname());
         parms.add(getLname());
-        parms.add(getPhoneNumber());
+        parms.add("91" + getPhoneNumber());
         parms.add(getEmail());
         parms.add(getAddress());
         parms.add(mGender);
@@ -569,17 +569,14 @@ public class EditMemberFragment extends Fragment {
         parms.add(isOffline ? mEncodedData:"");
         parms.add(getZipcode());
         parms.add(getDateOfBirth());
-        parms.add(member.getFamilyHeadId());
-        parms.add(member.getIsFamilyHead());
         parms.add(isOffline ? "no" : "yes");
         parms.add(mImageType);
         parms.add(AppData.getString(mContext, CensusConstants.rolebased_user_id));
         parms.add(getAadhaar());
 
-
         dbParams_duty.addParamterList(parms);
 
-        final DbAsyncParameter dbAsyncParam_duty = new DbAsyncParameter(R.string.sql_update_member,
+        final DbAsyncParameter dbAsyncParam_duty = new DbAsyncParameter(R.string.sql_update_supervisor,
                 DbAsyncTask.QUERY_TYPE_BULK_UPDATE, dbParams_duty, null);
 
         DbAction dbAction_duty = new DbAction() {
@@ -639,17 +636,17 @@ public class EditMemberFragment extends Fragment {
             // params comes from the execute() call: params[0] is the url.
             List<NameValuePair> parms = new LinkedList<NameValuePair>();
 
-//            parms.add(new BasicNameValuePair(CensusConstants.member_id, member.getId()));
-            parms.add(new BasicNameValuePair(CensusConstants.isFamilyHead, member.getIsFamilyHead()));
-            parms.add(new BasicNameValuePair(CensusConstants.familyHeadId, member.getFamilyHeadId()));
             parms.add(new BasicNameValuePair(CensusConstants.firstName, getFname()));
             parms.add(new BasicNameValuePair(CensusConstants.lastName, getLname()));
             parms.add(new BasicNameValuePair(CensusConstants.gender, mGender));
-
             parms.add(new BasicNameValuePair(CensusConstants.dob, getDateOfBirth()));
+            parms.add(new BasicNameValuePair(CensusConstants.phoneNumber, mSupervisorObj.getPhone_number()));
             parms.add(new BasicNameValuePair(CensusConstants.aadhaar, getAadhaar()));
             parms.add(new BasicNameValuePair(CensusConstants.emailId, getEmail()));
             parms.add(new BasicNameValuePair(CensusConstants.address, getAddress()));
+            parms.add(new BasicNameValuePair(CensusConstants.city_id, mSupervisorObj.getCity_id()));
+            parms.add(new BasicNameValuePair(CensusConstants.state_id, mSupervisorObj.getState_id()));
+            parms.add(new BasicNameValuePair(CensusConstants.country, "india"));
             parms.add(new BasicNameValuePair(CensusConstants.zipcode, getZipcode()));
             parms.add(new BasicNameValuePair(CensusConstants.userAvatar, mEncodedData));
             parms.add(new BasicNameValuePair("image_type", mImageType));
@@ -661,7 +658,7 @@ public class EditMemberFragment extends Fragment {
             url += paramString;
             Log.e(TAG, "url sending is >>> " + url);*/
 
-            String URL = CensusConstants.BASE_URL + CensusConstants.UPDATE_MEMBER_URL;
+            String URL = CensusConstants.BASE_URL + CensusConstants.UPDATE_SUPERVISOR_INFO_URL;
 
             return new ConnectToServer().getDataFromUrl(URL, parms);
         }
@@ -681,7 +678,7 @@ public class EditMemberFragment extends Fragment {
                 if (status.equals("success")) {
 
                     if (status.equalsIgnoreCase(CensusConstants.SUCCESS) && status_code.equals("1000")) {
-                        saveToLocalDB(false, jsonObject.getString("image_url"), "Member data has been updated successfully");
+                        saveToLocalDB(false, jsonObject.getString("image_url"), "Supervisor info has been updated successfully");
                     } else if (status.equalsIgnoreCase(CensusConstants.SUCCESS) && status_code.equals("1001")) {
                         final Dialog customDialog = new Dialog(mContext);
                         customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -695,52 +692,16 @@ public class EditMemberFragment extends Fragment {
                             @Override
                             public void onClick(View v) {
                                 customDialog.dismiss();
-//                                Intent intent = new Intent(mContext, HomeActivity.class);
-//                                startActivity(intent);
-//                                overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
                             }
                         });
                         customDialog.show();
                     }
                 } else if (status.equals("error")) {
-                    final Dialog customDialog = new Dialog(mContext);
-                    customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-                    customDialog.setContentView(R.layout.simple_alert);
-                    ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Error");
-                    ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
-                    TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                    text.setText("OK");
-
-                    text.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            customDialog.dismiss();
-                            saveToLocalDB(true, "", "Server Error. your data has been saved in local Database");
-//                            overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                        }
-                    });
-                    customDialog.show();
+                    saveToLocalDB(true, "", "Somethingwent wrong !!! meanwhile we saved updated supervisor info successfully in local db");
                 }
             } catch (JSONException jsonException) {
                 jsonException.printStackTrace();
-
-                final Dialog customDialog = new Dialog(mContext);
-                customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-                customDialog.setContentView(R.layout.simple_alert);
-                ((TextView) customDialog.findViewById(R.id.dialogTitleTV)).setText("Alert");
-                ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText("Server Not Responding Please try again Later.");
-                TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
-                text.setText("OK");
-
-                text.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        customDialog.dismiss();
-                        saveToLocalDB(true, "", "something gone wrong!!! your data has been saved in local Database");
-//                        overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-                    }
-                });
-                customDialog.show();
+                saveToLocalDB(true, "", "something gone wrong!!! your data has been saved in local Database");
             }
         }
     }

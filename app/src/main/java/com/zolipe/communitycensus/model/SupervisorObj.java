@@ -18,12 +18,14 @@ public class SupervisorObj implements Parcelable{
     private String member_count;
     private String dob;
     private String isSynced;
+    private String city_id;
+    private String state_id;
 
     public SupervisorObj (String id, String first_name, String last_name,
                           String phone, String aadhar, String email,
                           String address, String age, String gender,
                           String url, String zipcode, String member_count,
-                          String dob, String isSynced){
+                          String dob, String isSynced, String city_id, String state_id){
         this.id = id;
         this.first_name = first_name;
         this.last_name = last_name;
@@ -37,8 +39,9 @@ public class SupervisorObj implements Parcelable{
         this.zipcode = zipcode;
         this.member_count = member_count;
         this.dob = dob;
-
         this.isSynced = isSynced;
+        this.city_id = city_id;
+        this.state_id = state_id;
     }
 
     protected SupervisorObj(Parcel in) {
@@ -56,6 +59,8 @@ public class SupervisorObj implements Parcelable{
         member_count = in.readString();
         dob = in.readString();
         isSynced = in.readString();
+        city_id = in.readString();
+        state_id = in.readString();
     }
 
     public static final Creator<SupervisorObj> CREATOR = new Creator<SupervisorObj>() {
@@ -182,6 +187,22 @@ public class SupervisorObj implements Parcelable{
         this.isSynced = isSynced;
     }
 
+    public String getCity_id() {
+        return city_id;
+    }
+
+    public void setCity_id(String city_id) {
+        this.city_id = city_id;
+    }
+
+    public String getState_id() {
+        return state_id;
+    }
+
+    public void setState_id(String state_id) {
+        this.state_id = state_id;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -203,5 +224,7 @@ public class SupervisorObj implements Parcelable{
         dest.writeString(member_count);
         dest.writeString(dob);
         dest.writeString(isSynced);
+        dest.writeString(city_id);
+        dest.writeString(state_id);
     }
 }

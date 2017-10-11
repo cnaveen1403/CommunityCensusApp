@@ -1,5 +1,6 @@
 package com.zolipe.communitycensus.fragments;
 
+
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
@@ -16,27 +17,30 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.zolipe.communitycensus.R;
-import com.zolipe.communitycensus.model.FamilyHead;
+import com.zolipe.communitycensus.model.SupervisorObj;
 
-public class ViewMemberFragment extends Fragment {
+import de.hdodenhof.circleimageview.CircleImageView;
+
+public class ViewSupervisorFragment extends Fragment {
 
     View rootView;
-    ImageView iv_profileImage;
-    TextView tv_first_name, tv_last_name, tv_gender, tv_dob, tv_phone_num, tv_aadhar,
-            tv_email, tv_address, tv_zipcode;
-    FamilyHead member;
     Context mContext;
     Activity mActivity;
+    SupervisorObj mSupervisorObj;
 
-    public ViewMemberFragment() {
+    TextView tv_first_name, tv_last_name, tv_age, tv_gender, tv_phone, tv_aadhar, tv_email, tv_address, tv_zipcode;
+    CircleImageView iv_image;
+
+    public ViewSupervisorFragment() {
         // Required empty public constructor
     }
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        rootView =  inflater.inflate(R.layout.fragment_view_member, container, false);
+        rootView =  inflater.inflate(R.layout.fragment_view_supervisor, container, false);
 
         init (rootView);
         mContext = this.getActivity();
@@ -44,26 +48,27 @@ public class ViewMemberFragment extends Fragment {
 
         Bundle bundle = this.getArguments();
         if (bundle != null) {
-            member = bundle.getParcelable("Member");
-            tv_first_name.setText(member.getFirst_name() + " " + member.getLast_name());
-            tv_last_name.setText(member.getLast_name());
-            tv_gender.setText(member.getGender());
-            tv_dob.setText(member.getAge());
-            tv_phone_num.setText(member.getPhone_number());
-            tv_aadhar.setText(member.getAadhaar());
-            tv_email.setText(member.getEmail());
-            tv_address.setText(member.getAddress());
-            tv_zipcode.setText(member.getZipcode());
+            mSupervisorObj = bundle.getParcelable("Supervisor");
+            tv_first_name.setText(mSupervisorObj.getFirst_name());
+            tv_last_name.setText(mSupervisorObj.getLast_name());
+            tv_last_name.setText(mSupervisorObj.getLast_name());
+            tv_gender.setText(mSupervisorObj.getGender());
+            tv_age.setText(mSupervisorObj.getAge());
+            tv_phone.setText(mSupervisorObj.getPhone_number());
+            tv_aadhar.setText(mSupervisorObj.getAadhaar());
+            tv_email.setText(mSupervisorObj.getEmail());
+            tv_address.setText(mSupervisorObj.getAddress());
+            tv_zipcode.setText(mSupervisorObj.getZipcode());
 
-            Glide.with(this).load(member.getImage_url())
+            Glide.with(this).load(mSupervisorObj.getImage_url())
                     .crossFade()
                     .dontAnimate()
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .placeholder(R.drawable.ic_supervisor_list)
-                    .into(iv_profileImage);
+                    .into(iv_image);
         }
 
-        iv_profileImage.setOnClickListener(new View.OnClickListener() {
+        iv_image.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 final Dialog nagDialog = new Dialog(mContext ,android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
@@ -72,7 +77,7 @@ public class ViewMemberFragment extends Fragment {
                 nagDialog.setContentView(R.layout.preview_image);
                 Button btnClose = (Button)nagDialog.findViewById(R.id.btnIvClose);
                 ImageView ivPreview = (ImageView)nagDialog.findViewById(R.id.iv_preview_image);
-                Glide.with(mContext).load(member.getImage_url())
+                Glide.with(mContext).load(mSupervisorObj.getImage_url())
                         .crossFade()
                         .dontAnimate()
                         .diskCacheStrategy(DiskCacheStrategy.ALL)
@@ -95,15 +100,15 @@ public class ViewMemberFragment extends Fragment {
     }
 
     private void init (View rootView){
-        tv_first_name = (TextView) rootView.findViewById(R.id.tv_first_name);
-        tv_last_name = (TextView) rootView.findViewById(R.id.tv_last_name);
-        tv_gender = (TextView) rootView.findViewById(R.id.tv_gender);
-        tv_dob = (TextView) rootView.findViewById(R.id.tv_dob);
-        tv_phone_num = (TextView) rootView.findViewById(R.id.tv_phone_num);
-        tv_aadhar = (TextView) rootView.findViewById(R.id.tv_aadhar);
-        tv_email = (TextView) rootView.findViewById(R.id.tv_email);
-        tv_address = (TextView) rootView.findViewById(R.id.tv_address);
-        tv_zipcode = (TextView) rootView.findViewById(R.id.tv_zipcode);
-        iv_profileImage = (ImageView) rootView.findViewById(R.id.iv_profileImage);
+        tv_first_name= (TextView) rootView.findViewById(R.id.tv_first_name_value);
+        tv_last_name= (TextView) rootView.findViewById(R.id.tv_last_name_value);
+        tv_gender = (TextView) rootView.findViewById(R.id.tv_gender_value);
+        tv_age = (TextView) rootView.findViewById(R.id.tv_age_value);
+        tv_phone = (TextView) rootView.findViewById(R.id.tv_phone_value);
+        tv_aadhar = (TextView) rootView.findViewById(R.id.tv_aadhaar_value);
+        tv_email = (TextView) rootView.findViewById(R.id.tv_email_value);
+        tv_address = (TextView) rootView.findViewById(R.id.tv_address_value);
+        tv_zipcode = (TextView) rootView.findViewById(R.id.tv_zipcode_value);
+        iv_image = (CircleImageView) rootView.findViewById(R.id.iv_image);
     }
 }

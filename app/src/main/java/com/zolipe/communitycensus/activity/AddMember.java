@@ -15,7 +15,6 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
@@ -373,11 +372,11 @@ public class AddMember extends AppCompatActivity {
                     public void onClick(View v) {
                         customDialog.dismiss();
                         if (isFamilyHead()) {
-                            mFamilyHead = new FamilyHead(getMemberAadhaar(), getMemberFirstName(), getMemberLastName(),
+                            mFamilyHead = new FamilyHead(getMemberFirstName(), getMemberLastName(),
                                     getMemberPhoneNumber(), getMemberAadhaar(), getMemberEmailId(),
                                     getMemberAddress(), getGender(), img_url, CommonUtils.calculateAge(getMemberDateOfBirth()),
                                     "100", "0", getMemberZipcode(),
-                                    getMemberDateOfBirth(), getMemberAadhaar(), "yes", "yes");
+                                    getMemberDateOfBirth(), getMemberAadhaar(), "yes", "yes", mStateId, mCityId);
 
                             finish();
                             Intent intent = new Intent(AddMember.this, FamilyDetailsActivity.class);
@@ -506,8 +505,8 @@ public class AddMember extends AppCompatActivity {
         mStateList = CommonUtils.getStatesList(mContext);
         spinner_state = (MaterialSpinner) findViewById(R.id.spinner_state);
         mStateListAdapter = new StateListAdapter(mContext, mStateList);
-        mStateListAdapter.notifyDataSetChanged();
         spinner_state.setAdapter(mStateListAdapter);
+        mStateListAdapter.notifyDataSetChanged();
         spinner_state.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
@@ -516,7 +515,7 @@ public class AddMember extends AppCompatActivity {
                     mStateId = state_id;
                     resetCitySpinner();
                     prepareCityList();
-                    Log.e(TAG, "onItemSelected: mCityList >>> " + mCityList.toString());
+//                    Log.e(TAG, "onItemSelected: mCityList >>> " + mCityList.toString());
                     mCityListAdapter.notifyDataSetChanged();
                 }
             }
@@ -1146,7 +1145,6 @@ public class AddMember extends AppCompatActivity {
                 if (cur.moveToFirst()) {
                     do {
                         try {
-                            String headId = cur.getString(cur.getColumnIndex("familyHeadId"));
                             String first_name = cur.getString(cur.getColumnIndex("first_name"));
                             String last_name = cur.getString(cur.getColumnIndex("last_name"));
                             String phone_number = cur.getString(cur.getColumnIndex("phone_number"));
@@ -1163,12 +1161,14 @@ public class AddMember extends AppCompatActivity {
                             String familyHeadId = cur.getString(cur.getColumnIndex("familyHeadId"));
                             String isFamilyHead = cur.getString(cur.getColumnIndex("isFamilyHead"));
                             String isSynced = cur.getString(cur.getColumnIndex("isSynced"));
+                            String state_id = cur.getString(cur.getColumnIndex("state_id"));
+                            String city_id = cur.getString(cur.getColumnIndex("city_id"));
 
                             if (mFamilyHeadList.size() == 0) {
-                                mFamilyHeadList.add(new FamilyHead(headId, first_name, last_name,
+                                mFamilyHeadList.add(new FamilyHead(first_name, last_name,
                                         phone_number, aadhaar, email,
                                         address, gender, image_url, age, relationship, size, zipcode
-                                        , dob, familyHeadId, isFamilyHead, isSynced));
+                                        , dob, familyHeadId, isFamilyHead, isSynced, state_id, city_id));
                             } else {
                                 boolean bStatus = true;
                                 Iterator<FamilyHead> iter = mFamilyHeadList.iterator();
@@ -1181,10 +1181,10 @@ public class AddMember extends AppCompatActivity {
                                 }
                                 Log.d(TAG, "bStatus >>>> " + bStatus);
                                 if (bStatus) {
-                                    mFamilyHeadList.add(new FamilyHead(headId, first_name, last_name,
+                                    mFamilyHeadList.add(new FamilyHead(first_name, last_name,
                                             phone_number, aadhaar, email,
                                             address, gender, image_url, age, relationship, size, zipcode
-                                            , dob, familyHeadId, isFamilyHead, isSynced));
+                                            , dob, familyHeadId, isFamilyHead, isSynced, state_id, city_id));
                                 }
                             }
                         } catch (Exception e) {

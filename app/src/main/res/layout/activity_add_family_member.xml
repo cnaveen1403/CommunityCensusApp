@@ -64,13 +64,14 @@
                 android:orientation="horizontal"
                 android:layout_marginTop="8dp"
                 android:padding="4dp"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:background="@color/pink">
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="14sp"
                     android:text="Family Head :"
-                    android:textColor="@color/colorAccent"
+                    android:textColor="@color/white"
                     android:layout_margin="8dp"
                     android:gravity="center"/>
                 <de.hdodenhof.circleimageview.CircleImageView
@@ -86,7 +87,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="14sp"
-                    android:textColor="@color/colorAccent"
+                    android:textColor="@color/white"
                     android:layout_margin="8dp"
                     android:gravity="center"/>
 
@@ -96,11 +97,11 @@
                 android:id="@+id/spinner_relations"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 app:ms_enableErrorLabel="true"
                 app:ms_enableFloatingLabel="false"
                 app:ms_hint="Please select Relationship"
-                app:ms_hintColor="@color/hint_color"
-                android:layout_marginTop="8dp"/>
+                app:ms_hintColor="@color/hint_color" />
 
             <EditText
                 android:id="@+id/et_first_name"

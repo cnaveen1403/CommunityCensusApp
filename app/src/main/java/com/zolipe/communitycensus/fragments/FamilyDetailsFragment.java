@@ -22,9 +22,8 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.zolipe.communitycensus.activity.AddFamilyMember;
 import com.zolipe.communitycensus.R;
-import com.zolipe.communitycensus.activity.FamilyDetailsActivity;
+import com.zolipe.communitycensus.activity.AddFamilyMember;
 import com.zolipe.communitycensus.activity.ViewMember;
 import com.zolipe.communitycensus.adapter.HorizantalListAdapter;
 import com.zolipe.communitycensus.app.AppData;
@@ -89,6 +88,7 @@ public class FamilyDetailsFragment extends Fragment {
         mAadhaar = AppData.getString(mContext, CensusConstants.aadhaar);
 
         if(CommonUtils.isActiveNetwork(mContext)){
+            showFamilyProfiles(mAadhaar);
             new GetFamilyDetailsAsyncTask().execute(mAadhaar);
         }else {
             showFamilyProfiles(mAadhaar);
@@ -99,7 +99,7 @@ public class FamilyDetailsFragment extends Fragment {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 FamilyHead tempObj = familyHeadsList.get(position);
                 Intent intent = new Intent(mContext, ViewMember.class);
-                intent.putExtra("Member", tempObj);
+                intent.putExtra("FamilyMember", tempObj);
                 startActivity(intent);
                 getActivity().overridePendingTransition(R.anim.slide_from_right, R.anim.slide_to_left);
                 //showMember (tempObj);
@@ -200,16 +200,8 @@ public class FamilyDetailsFragment extends Fragment {
                     rl_family_members.setVisibility(View.GONE);
                     rl_error.setVisibility(View.VISIBLE);
                     ((TextView) rootView.findViewById(R.id.tv_no_data)).setText(response);*/
-                    familyHeadsList.clear();
-                    sv_head_detail.setVisibility(View.VISIBLE);
-                    rl_family_members.setVisibility(View.VISIBLE);
-                    rl_error.setVisibility(View.GONE);
                     showFamilyProfiles(mAadhaar);
                 } else if (status.equals("success") && status_code.equals("1000")) {
-                    familyHeadsList.clear();
-                    sv_head_detail.setVisibility(View.VISIBLE);
-                    rl_family_members.setVisibility(View.VISIBLE);
-                    rl_error.setVisibility(View.GONE);
                     JSONArray jsonArray = jsonObject.getJSONArray("data");
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject explrObject = jsonArray.getJSONObject(i);
@@ -218,22 +210,14 @@ public class FamilyDetailsFragment extends Fragment {
 
                     showFamilyProfiles(mAadhaar); //familyMembersList.setAdapter(new HorizantalListAdapter(mContext, familyHeadsList));
                 } else if (status.equals("success") && status_code.equals("1001")) {
-                    /*sv_head_detail.setVisibility(View.GONE);
-                    rl_family_members.setVisibility(View.GONE);
-                    rl_error.setVisibility(View.VISIBLE);
-                    tv_no_data.setText("Data Not available, Please add Members.");*/
-                    familyHeadsList.clear();
-                    sv_head_detail.setVisibility(View.VISIBLE);
-                    rl_family_members.setVisibility(View.VISIBLE);
-                    rl_error.setVisibility(View.GONE);
                     showFamilyProfiles(mAadhaar);
                 }
             } catch (JSONException jsonException) {
                 jsonException.printStackTrace();
-                sv_head_detail.setVisibility(View.GONE);
+                /*sv_head_detail.setVisibility(View.GONE);
                 rl_family_members.setVisibility(View.GONE);
                 rl_error.setVisibility(View.VISIBLE);
-                tv_no_data.setText("Server Not Responding !!! Please try again later.");
+                tv_no_data.setText("Server Not Responding !!! Please try again later.");*/
             }
         }
     }
@@ -245,7 +229,7 @@ public class FamilyDetailsFragment extends Fragment {
         ArrayList<Object> parms = new ArrayList<Object>();
         parms.add(head_aadhaar);
         dbParams.addParamterList(parms);
-
+        Log.e(TAG, "showFamilyProfiles: head_aadhaar >>> " + head_aadhaar);
         final DbAsyncParameter dbAsyncParam = new DbAsyncParameter(R.string.sql_select_family_members,
                 DbAsyncTask.QUERY_TYPE_CURSOR, dbParams, null);
         DbAction dbAction = new DbAction() {
@@ -260,11 +244,22 @@ public class FamilyDetailsFragment extends Fragment {
                 if (cur == null) {
                     return;
                 }
-                Log.e(TAG, "execPostDbAction: cur COUNT >>>>>>>>>>> " + cur.getCount());
+
+                if(cur.getCount() > 0){
+                    familyHeadsList.clear();
+                    sv_head_detail.setVisibility(View.VISIBLE);
+                    rl_family_members.setVisibility(View.VISIBLE);
+                    rl_error.setVisibility(View.GONE);
+                }else {
+                    sv_head_detail.setVisibility(View.GONE);
+                    rl_family_members.setVisibility(View.GONE);
+                    rl_error.setVisibility(View.VISIBLE);
+                    tv_no_data.setText("No Data Available !!! Please add members.");
+                }
+
                 if (cur.moveToFirst()) {
                     do {
                         try {
-                            String headId = cur.getString(cur.getColumnIndex("familyHeadId"));
                             String first_name = cur.getString(cur.getColumnIndex("first_name"));
                             String last_name = cur.getString(cur.getColumnIndex("last_name"));
                             String phone_number = cur.getString(cur.getColumnIndex("phone_number"));
@@ -281,6 +276,8 @@ public class FamilyDetailsFragment extends Fragment {
                             String familyHeadId = cur.getString(cur.getColumnIndex("familyHeadId"));
                             String isFamilyHead = cur.getString(cur.getColumnIndex("isFamilyHead"));
                             String isSynced = cur.getString(cur.getColumnIndex("isSynced"));
+                            String city_id = cur.getString(cur.getColumnIndex("city_id"));
+                            String state_id = cur.getString(cur.getColumnIndex("state_id"));
 //                            Log.e(TAG, "execPostDbAction: first_name >> " + first_name);
 //                            Log.e(TAG, "execPostDbAction: last_name >> " + last_name);
 //                            Log.e(TAG, "execPostDbAction: aadhaar >> " + aadhaar);
@@ -301,15 +298,17 @@ public class FamilyDetailsFragment extends Fragment {
                                         .placeholder(R.drawable.app_icon)
                                         .into((ImageView)rootView.findViewById(R.id.iv_header_image));
 
-                                mFamilyHead = new FamilyHead(headId, first_name, last_name,
+                                mFamilyHead = new FamilyHead(first_name, last_name,
                                         phone_number, aadhaar, email, address, gender, image_url,
-                                        age, "Self", size, zipcode, dob, familyHeadId, isFamilyHead, isSynced);
+                                        age, "Self", size, zipcode, dob, familyHeadId, isFamilyHead,
+                                        isSynced, city_id, state_id);
                             } else {
                                 String relation = getRelationName(relationship);
                                 if (familyHeadsList.size() == 0) {
-                                    familyHeadsList.add(new FamilyHead(headId, first_name, last_name,
+                                    familyHeadsList.add(new FamilyHead(first_name, last_name,
                                             phone_number, aadhaar, email, address, gender, image_url,
-                                            age, relation, size, zipcode, dob, familyHeadId, isFamilyHead, isSynced));
+                                            age, relation, size, zipcode, dob, familyHeadId, isFamilyHead,
+                                            isSynced, city_id, state_id));
                                 } else {
                                     boolean bStatus = true;
                                     Iterator<FamilyHead> iter = familyHeadsList.iterator();
@@ -322,15 +321,12 @@ public class FamilyDetailsFragment extends Fragment {
                                     }
                                     Log.d(TAG, "bStatus >>>> " + bStatus);
                                     if (bStatus) {
-                                        familyHeadsList.add(new FamilyHead(headId, first_name, last_name,
+                                        familyHeadsList.add(new FamilyHead(first_name, last_name,
                                                 phone_number, aadhaar, email, address, gender, image_url,
-                                                age, relation, size, zipcode, dob, familyHeadId, isFamilyHead, isSynced));
+                                                age, relation, size, zipcode, dob, familyHeadId, isFamilyHead,
+                                                isSynced, city_id, state_id));
                                     }
                                 }
-
-                               /* familyHeadsList.add(new FamilyHead(headId, first_name, last_name,
-                                        phone_number, aadhaar, email, address, gender, image_url,
-                                        age, relation, size, zipcode, dob, familyHeadId, isFamilyHead, isSynced));*/
                             }
                         } catch (Exception e) {
                             // TODO Auto-generated catch block

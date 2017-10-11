@@ -56,7 +56,7 @@ public class LoginSignupActivity extends Activity {
     Button btn_login, btn_signup, mPhoneSignInButton;
     Context mContext;
     EditText et_username, et_password;
-    TextView tv_admin_login_hint, tv_member_login_hint, tv_member_login, tv_member_supervisor;
+    TextView tv_admin_login_hint, tv_member_login_hint, tv_member_supervisor;
     RelativeLayout rl_member_login, rl_admin_login;
     Animation animation;
     String mUserRole = "supervisor";
@@ -82,7 +82,7 @@ public class LoginSignupActivity extends Activity {
         tv_admin_login_hint = (TextView) findViewById(R.id.tv_admin_login_hint);
         tv_member_login_hint = (TextView) findViewById(R.id.tv_member_login_hint);
         tv_member_supervisor = (TextView) findViewById(R.id.tv_member_supervisor);
-        tv_member_login = (TextView) findViewById(R.id.tv_member_login);
+//        tv_member_login = (TextView) findViewById(R.id.tv_member_login);
         et_username = (EditText) findViewById(R.id.et_username);
         et_password = (EditText) findViewById(R.id.et_password);
         rl_member_login.setVisibility(View.VISIBLE);
@@ -123,7 +123,7 @@ public class LoginSignupActivity extends Activity {
             e.printStackTrace();
         }
 
-        tv_member_login.setOnClickListener(new View.OnClickListener() {
+        /*tv_member_login.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 tv_member_login.setPaintFlags(tv_member_login.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
@@ -140,7 +140,7 @@ public class LoginSignupActivity extends Activity {
                     memberLoginUIenable();
                 }
             }
-        });
+        });*/
 
         tv_admin_login_hint.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -179,6 +179,37 @@ public class LoginSignupActivity extends Activity {
         } else {
             //Handle new or logged out user
         }
+
+        final Button supervisor_login = (Button)findViewById(R.id.btn_supervisor_login);
+        final Button member_login = (Button)findViewById(R.id.btn_member_login);
+
+        View.OnClickListener topButtonsListener  = new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                if (view.getId() == R.id.btn_supervisor_login){
+                    supervisor_login.setSelected(true);
+                    supervisor_login.setTextColor(getResources().getColor(R.color.white));
+                    member_login.setTextColor(getResources().getColor(R.color.hint_color));
+                    member_login.setSelected(false);
+
+                    mUserRole = "supervisor";
+                    tv_member_supervisor.setText("You are logging in as Supervisor");
+                }
+                else{
+                    supervisor_login.setSelected(false);
+                    member_login.setSelected(true);
+                    supervisor_login.setTextColor(getResources().getColor(R.color.hint_color));
+                    member_login.setTextColor(getResources().getColor(R.color.white));
+
+                    mUserRole = "member";
+                    tv_member_supervisor.setText("You are logging in as Member");
+                }
+            }
+        };
+
+        supervisor_login.setOnClickListener(topButtonsListener);
+        member_login.setOnClickListener(topButtonsListener);
+        supervisor_login.performClick();
     }
 
     public void phoneLogin(final View view) {
@@ -233,7 +264,6 @@ public class LoginSignupActivity extends Activity {
     }
 
     private void showErrorActivity(AccountKitError error) {
-//        Toast.makeText(mContext, "Error Occured", Toast.LENGTH_SHORT).show();
         String message = error.getUserFacingMessage();
         Intent intent = new Intent(LoginSignupActivity.this, ErrorActivity.class);
         intent.putExtra("error_message", message);
@@ -361,11 +391,11 @@ public class LoginSignupActivity extends Activity {
             parms.add(new BasicNameValuePair(CensusConstants.userRole, mUserRole));
 
             //Print Full URL
-            String paramString = URLEncodedUtils.format(parms, "utf-8");
+            /*String paramString = URLEncodedUtils.format(parms, "utf-8");
             String url = CensusConstants.BASE_URL + CensusConstants.LOGIN_URL;
             url += "?";
             url += paramString;
-            Log.e(TAG, "url sending is >>> " + url);
+            Log.e(TAG, "url sending is >>> " + url);*/
 
             return new ConnectToServer().getDataFromUrl(CensusConstants.BASE_URL + CensusConstants.LOGIN_URL, parms);
         }
@@ -464,7 +494,7 @@ public class LoginSignupActivity extends Activity {
             String key = iter.next();
             try {
                 //Save each key value pair received from the Server
-                Log.e(TAG, "key >> " + key + " >> value >> " + jsonObject.getString(key));
+//                Log.e(TAG, "key >> " + key + " >> value >> " + jsonObject.getString(key));
                 if (key.equals("dob")) {
                     String date = jsonObject.getString(key);
                     String[] array = date.split("-");
@@ -519,7 +549,6 @@ public class LoginSignupActivity extends Activity {
                 String status = jsonObject.getString(CensusConstants.STATUS);
 
                 if (status.equals("error")) {
-//                    Digits.logout();
                     String response = jsonObject.getString("response");
                     final Dialog dialog = new Dialog(LoginSignupActivity.this);
                     dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -560,11 +589,8 @@ public class LoginSignupActivity extends Activity {
                         });
                         dialog.show();
                     } else if (statusCode.equals("1000")) {
-//                        Digits.logout();
-
                         JSONArray jsonArrayProfileDetails = jsonObject.getJSONArray("profile_details");
                         JSONObject jsonProfileObj = jsonArrayProfileDetails.getJSONObject(0);
-
                         AppData.saveBoolean(mContext, CensusConstants.isLoggedIn, true);
 
                         saveUserProfileDetails(jsonProfileObj);

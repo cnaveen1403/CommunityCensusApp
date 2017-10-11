@@ -104,24 +104,14 @@
             android:screenOrientation="portrait"
             android:windowSoftInputMode="stateAlwaysHidden" />
         <activity
-            android:name=".activity.FamilyMembers"
-            android:label="@string/title_activity_family_members"
+            android:name=".activity.FamilyDetailsActivity"
+            android:label="Family Details"
             android:parentActivityName=".activity.HomeActivity"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.zolipe.communitycensus.activity.HomeActivity" />
-        </activity>
-        <activity
-            android:name=".activity.FamilyDetailsActivity"
-            android:label="Family Details"
-            android:parentActivityName=".activity.FamilyMembers"
-            android:screenOrientation="portrait"
-            android:theme="@style/AppTheme.NoActionBar">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.zolipe.communitycensus.activity.FamilyMembers" />
         </activity>
         <activity
             android:name=".activity.AddFamilyMember"
@@ -144,7 +134,7 @@
                 android:value="com.zolipe.communitycensus.activity.HomeActivity" />
         </activity>
         <activity
-            android:name=".activity.SupervisorDetail"
+            android:name=".activity.ViewSupervisor"
             android:label="@string/title_activity_supervisor_detail"
             android:parentActivityName=".activity.HomeActivity"
             android:theme="@style/AppTheme.NoActionBar">
