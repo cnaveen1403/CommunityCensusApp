@@ -1,7 +1,5 @@
 package com.zolipe.communitycensus.util;
 
-import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -13,14 +11,8 @@ import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.support.design.widget.CoordinatorLayout;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
-import android.view.View;
-import android.widget.TextView;
 
 import com.zolipe.communitycensus.R;
 import com.zolipe.communitycensus.activity.HomeActivity;
@@ -30,7 +22,6 @@ import com.zolipe.communitycensus.database.DbAsyncParameter;
 import com.zolipe.communitycensus.database.DbAsyncTask;
 import com.zolipe.communitycensus.database.DbParameter;
 import com.zolipe.communitycensus.database.GDatabaseHelper;
-import com.zolipe.communitycensus.fragments.SupervisorFragment;
 import com.zolipe.communitycensus.model.State;
 
 import org.apache.http.HttpResponse;
@@ -336,7 +327,6 @@ public class CommonUtils {
 
                 @Override
                 public void execPostDbAction() {
-
                 }
             };
 

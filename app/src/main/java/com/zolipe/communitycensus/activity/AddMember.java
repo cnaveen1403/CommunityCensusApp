@@ -15,7 +15,6 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
@@ -506,8 +505,8 @@ public class AddMember extends AppCompatActivity {
         mStateList = CommonUtils.getStatesList(mContext);
         spinner_state = (MaterialSpinner) findViewById(R.id.spinner_state);
         mStateListAdapter = new StateListAdapter(mContext, mStateList);
-        mStateListAdapter.notifyDataSetChanged();
         spinner_state.setAdapter(mStateListAdapter);
+        mStateListAdapter.notifyDataSetChanged();
         spinner_state.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
@@ -516,7 +515,7 @@ public class AddMember extends AppCompatActivity {
                     mStateId = state_id;
                     resetCitySpinner();
                     prepareCityList();
-                    Log.e(TAG, "onItemSelected: mCityList >>> " + mCityList.toString());
+//                    Log.e(TAG, "onItemSelected: mCityList >>> " + mCityList.toString());
                     mCityListAdapter.notifyDataSetChanged();
                 }
             }

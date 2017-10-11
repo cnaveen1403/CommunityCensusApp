@@ -301,6 +301,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="8dp"
                 android:layout_marginRight="8dp"
+                android:layout_marginBottom="16dp"
                 android:drawableLeft="@drawable/ic_zipcode"
                 android:drawablePadding="10dp"
                 android:drawableStart="@drawable/ic_zipcode"

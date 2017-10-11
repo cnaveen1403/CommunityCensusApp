@@ -12,31 +12,23 @@
 
         <TextView
             android:layout_width="wrap_content"
-            android:layout_height="40dp"
+            android:layout_height="48dp"
             android:layout_marginLeft="24dp"
             android:layout_marginTop="8dp"
             android:text="Logout"
             android:gravity="center"
             android:textColor="@color/colorAccent"
             android:textSize="22sp" />
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="2dp"
-            android:background="@drawable/border_top_hint_color" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="20dp"
+            android:layout_margin="24dp"
             android:gravity="center"
             android:text="@string/lbl_logout"
-            android:textColor="@color/colorAccent"
+            android:textColor="@color/dark_grey"
             android:textSize="20sp" />
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="2dp"
-            android:background="@drawable/border_top_hint_color" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -45,7 +37,7 @@
             <Button
                 android:id="@+id/btn_cancel"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="48dp"
                 android:text="NO"
                 android:textColor="@color/colorPrimary"
                 android:theme="@style/SEND"
@@ -53,7 +45,7 @@
             <Button
                 android:id="@+id/btn_send"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="48dp"
                 android:text="YES"
                 android:textColor="@color/colorPrimary"
                 android:theme="@style/MyButton"

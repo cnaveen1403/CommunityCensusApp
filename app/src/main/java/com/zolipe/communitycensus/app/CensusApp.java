@@ -2,6 +2,7 @@ package com.zolipe.communitycensus.app;
 
 import android.app.Application;
 
+import com.zolipe.communitycensus.util.CensusConstants;
 import com.zolipe.communitycensus.util.CensusReceiver;
 
 public class CensusApp extends Application {
@@ -19,6 +20,7 @@ public class CensusApp extends Application {
     }
 
     public void setConnectivityListener(CensusReceiver.ConnectivityReceiverListener listener) {
-        CensusReceiver.connectivityReceiverListener = listener;
+        if (AppData.getBoolean(this, CensusConstants.isLoggedIn) == true)
+            CensusReceiver.connectivityReceiverListener = listener;
     }
 }

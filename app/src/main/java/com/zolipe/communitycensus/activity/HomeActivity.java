@@ -68,7 +68,6 @@ public class HomeActivity extends AppCompatActivity
         CensusReceiver.ConnectivityReceiverListener {
 
     private String TAG = HomeActivity.class.getSimpleName();
-    private static final float ALPHA_DIM_VALUE = 0.1f;
     Toolbar toolbar;
     ImageView iv_edit_profile;
     CircleImageView iv_profile_image;
@@ -391,7 +390,6 @@ public class HomeActivity extends AppCompatActivity
     }
 
     private void addMemberInfo() {
-        Log.e(TAG, "addMemberInfo: Inside >>>> ");
         Intent intent = new Intent(HomeActivity.this, AddMember.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
