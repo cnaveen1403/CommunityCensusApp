@@ -91,15 +91,12 @@ public class CommonUtils {
             cal2.setTime(todaysDate);
             int nowMonth = cal2.get(Calendar.MONTH) + 1;
             int nowYear = cal2.get(Calendar.YEAR);
-            ;
             int result = nowYear - year;
 
             if (month > nowMonth) {
                 result--;
             } else if (month == nowMonth) {
                 int nowDay = cal2.get(Calendar.DAY_OF_MONTH);
-                ;
-                ;
 
                 if (day > nowDay) {
                     result--;
@@ -557,19 +554,22 @@ public class CommonUtils {
         builder.setSmallIcon(R.drawable.logo_blue);
         Intent intent = new Intent(context, HomeActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        int UNIQUE_INTEGER_NUMBER = 1;
 
         if (userDataType.equals("supervisor"))
             intent.putExtra("selected_tab", userDataType);
 
-        if (userDataType.equals("members"))
+        if (userDataType.equals("members")) {
             intent.putExtra("selected_tab", userDataType);
+            UNIQUE_INTEGER_NUMBER = 2;
+        }
 
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
         builder.setContentIntent(pendingIntent);
         builder.setLargeIcon(BitmapFactory.decodeResource(context.getResources(), R.drawable.logo_blue));
         builder.setContentTitle("Community Census");
         builder.setContentText(message);
-        builder.setSubText("Tap to view");
+        builder.setSubText("Tap to relaod the view");
         builder.setPriority(Notification.PRIORITY_HIGH);
         builder.setDefaults(Notification.DEFAULT_ALL);
         builder.setAutoCancel(true);
@@ -577,7 +577,7 @@ public class CommonUtils {
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(NOTIFICATION_SERVICE);
 
         // Will display the notification in the notification bar
-        notificationManager.notify(1, builder.build());
+        notificationManager.notify(UNIQUE_INTEGER_NUMBER, builder.build());
     }
 
     public static void saveSupervisorsToLocalDB(Context context, JSONObject jsonObject) {

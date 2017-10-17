@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    android:background="@drawable/paytm_border"
+    android:background="@color/colorPrimary"
     android:orientation="vertical">
 
     <LinearLayout
@@ -16,7 +16,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/paytm_color"
+            android:background="@color/colorPrimary"
             android:orientation="horizontal"
             android:padding="8dp">
 
@@ -61,9 +61,10 @@
             <EditText
                 android:id="@+id/et_input"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="48dp"
                 android:layout_margin="8dp"
                 android:layout_weight="0.85"
+                android:paddingStart="8dp"
                 android:background="@drawable/border_bottom"
                 android:hint="Enter your message ..."
                 android:textColorHint="@color/hint_color">

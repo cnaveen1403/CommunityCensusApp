@@ -267,7 +267,7 @@ public class EditProfile extends AppCompatActivity {
                 .crossFade()
                 .dontAnimate()
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .placeholder(R.drawable.app_icon)
+                .placeholder(R.drawable.ic_user)
                 .into(iv_add_image);
 
         new Thread(new Runnable() {

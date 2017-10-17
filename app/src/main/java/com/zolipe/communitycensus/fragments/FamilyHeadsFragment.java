@@ -107,6 +107,14 @@ public class FamilyHeadsFragment extends Fragment implements FamilyHeadsListItem
 
         mActivity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
         et_search = (EditText) rootView.findViewById(R.id.et_search);
+
+        et_search.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+            }
+        });
+
         et_search.addTextChangedListener(new TextWatcher() {
 
             @Override
@@ -158,6 +166,8 @@ public class FamilyHeadsFragment extends Fragment implements FamilyHeadsListItem
                 }
             }
         });
+
+        getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 
         return rootView;
     }
@@ -223,7 +233,6 @@ public class FamilyHeadsFragment extends Fragment implements FamilyHeadsListItem
                     rl_data.setVisibility(View.VISIBLE);
                     do {
                         try {
-                            String headId = cur.getString(cur.getColumnIndex("familyHeadId"));
                             String first_name = cur.getString(cur.getColumnIndex("first_name"));
                             String last_name = cur.getString(cur.getColumnIndex("last_name"));
                             String phone_number = cur.getString(cur.getColumnIndex("phone_number"));
@@ -323,7 +332,6 @@ public class FamilyHeadsFragment extends Fragment implements FamilyHeadsListItem
                     rl_data.setVisibility(View.VISIBLE);
                     do {
                         try {
-                            String headId = cur.getString(cur.getColumnIndex("familyHeadId"));
                             String first_name = cur.getString(cur.getColumnIndex("first_name"));
                             String last_name = cur.getString(cur.getColumnIndex("last_name"));
                             String phone_number = cur.getString(cur.getColumnIndex("phone_number"));

@@ -655,11 +655,11 @@ public class EditMemberFragment extends Fragment {
             parms.add(new BasicNameValuePair("image_type", mImageType));
             parms.add(new BasicNameValuePair("updated_by", AppData.getString(mContext, CensusConstants.rolebased_user_id)));
 
-            /*String paramString = URLEncodedUtils.format(parms, "utf-8");
+            String paramString = URLEncodedUtils.format(parms, "utf-8");
             String url = CensusConstants.BASE_URL + CensusConstants.UPDATE_SUPERVISOR_INFO_URL;
             url += "?";
             url += paramString;
-            Log.e(TAG, "url sending is >>> " + url);*/
+            Log.e(TAG, "url sending is >>> " + url);
 
             String URL = CensusConstants.BASE_URL + CensusConstants.UPDATE_MEMBER_URL;
 

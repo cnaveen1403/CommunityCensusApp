@@ -344,9 +344,9 @@ public class AddSupervisor extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                Intent intent = new Intent(AddSupervisor.this, HomeActivity.class);
+                /*Intent intent = new Intent(AddSupervisor.this, HomeActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
+                startActivity(intent);*/
                 finish();
                 overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
                 return true;
@@ -734,7 +734,7 @@ public class AddSupervisor extends AppCompatActivity {
         Date todaysDate = new Date();
         String formattedDate = new SimpleDateFormat("yyyy-MM-dd").format(todaysDate);
         Log.e(TAG, "isValidDateOfBirth: after comparision" + formattedDate.compareTo(supervisorDOB));
-        return ((formattedDate.compareTo(supervisorDOB) < 0) ? false : true);
+        return (formattedDate.compareTo(supervisorDOB) >= 0);
     }
 
     public String gerSupervisorFirstName() {

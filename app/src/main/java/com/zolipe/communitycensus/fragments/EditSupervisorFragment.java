@@ -57,7 +57,6 @@ import com.zolipe.communitycensus.util.ConnectToServer;
 import com.zolipe.communitycensus.util.SelectDocument;
 
 import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -216,7 +215,7 @@ public class EditSupervisorFragment extends Fragment {
     private void showDOBDialogue(View v) {
         InputMethodManager imm = (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(v.getWindowToken(), 1);
-        DialogFragment dFragment = new EditMemberFragment.DatePickerFragment();
+        DialogFragment dFragment = new DatePickerFragment();
         dFragment.show(mActivity.getFragmentManager(), "date picker");
     }
 
@@ -442,17 +441,6 @@ public class EditSupervisorFragment extends Fragment {
         return et_zipcode.getText().toString();
     }
 
-    private static boolean isValidAadhar() {
-        boolean bStatus = true;
-        if (et_aadhaar.getText().toString().length() < 12) {
-            bStatus = false;
-        } else if (getAadhaar().equals("")) {
-            bStatus = false;
-        }
-
-        return bStatus;
-    }
-
     private static boolean isValidPhoneNumber() {
         boolean bStatus = true;
         if (getPhoneNumber().length() < 10) {
@@ -474,11 +462,7 @@ public class EditSupervisorFragment extends Fragment {
             bStatus = false;
             et_last_name.requestFocus();
             et_last_name.setError("Please enter last name");
-        } /*else if (!isValidAadhar()) {
-            bStatus = false;
-            et_aadhaar.requestFocus();
-            et_aadhaar.setError("Please enter valid Aadhaar Number");
-        } */ else if (!isValidPhoneNumber()) {
+        } else if (!isValidPhoneNumber()) {
             bStatus = false;
             et_aadhaar.requestFocus();
             et_aadhaar.setError("Please enter valid Phone Number");
@@ -513,7 +497,6 @@ public class EditSupervisorFragment extends Fragment {
 
         et_first_name.setText(mSupervisorObj.getFirst_name());
         et_last_name.setText(mSupervisorObj.getLast_name());
-//        Log.e(TAG, "setProfileData: " + member.getDob());
 
         String date = mSupervisorObj.getDob();
         String[] array = date.split("-");
@@ -534,14 +517,6 @@ public class EditSupervisorFragment extends Fragment {
                 .into(ivProfileImage);
 
         String gender = mSupervisorObj.getGender();
-
-
-        /*try {
-            et_dob.setText(AppData.getString(mContext, CensusConstants.dob));
-            et_dob.setText(formatDate (AppData.getString(mContext, CensusConstants.dob), "DD-MM-yyyy", "yyyy-MM-DD"));
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }*/
 
         if (gender.equals("male")) {
             toggleButton_gender.setChecked(false);
@@ -586,8 +561,6 @@ public class EditSupervisorFragment extends Fragment {
 
             @Override
             public void execPostDbAction() {
-
-
                 final Dialog customDialog = new Dialog(mContext);
                 customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
                 customDialog.setContentView(R.layout.simple_alert);
@@ -676,7 +649,6 @@ public class EditSupervisorFragment extends Fragment {
                 String status_code = jsonObject.getString("status_code");
 
                 if (status.equals("success")) {
-
                     if (status.equalsIgnoreCase(CensusConstants.SUCCESS) && status_code.equals("1000")) {
                         saveToLocalDB(false, jsonObject.getString("image_url"), "Supervisor info has been updated successfully");
                     } else if (status.equalsIgnoreCase(CensusConstants.SUCCESS) && status_code.equals("1001")) {
@@ -687,7 +659,6 @@ public class EditSupervisorFragment extends Fragment {
                         ((TextView) customDialog.findViewById(R.id.dialogMessage)).setText(response);
                         TextView text = (TextView) customDialog.findViewById(R.id.cancelTV);
                         text.setText("OK");
-
                         text.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {

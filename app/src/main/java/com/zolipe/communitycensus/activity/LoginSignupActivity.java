@@ -1,19 +1,23 @@
 package com.zolipe.communitycensus.activity;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Paint;
+import android.graphics.Color;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
-import android.os.Debug;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RelativeLayout;
@@ -33,11 +37,13 @@ import com.facebook.accountkit.ui.LoginType;
 import com.zolipe.communitycensus.R;
 import com.zolipe.communitycensus.app.AppData;
 import com.zolipe.communitycensus.database.GDatabaseHelper;
+import com.zolipe.communitycensus.permissions.PermissionsActivity;
+import com.zolipe.communitycensus.permissions.PermissionsChecker;
 import com.zolipe.communitycensus.util.CensusConstants;
+import com.zolipe.communitycensus.util.CommonUtils;
 import com.zolipe.communitycensus.util.ConnectToServer;
 
 import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -61,6 +67,10 @@ public class LoginSignupActivity extends Activity {
     Animation animation;
     String mUserRole = "supervisor";
 
+    private static final String[] PERMISSIONS_READ_SMS = new String[]{Manifest.permission.READ_SMS};
+    PermissionsChecker checker;
+    private static final int CHECK_PERMISSION = 1003;
+
     private static final String[] WHITE_LIST = new String[]{
             "IN"
     };
@@ -71,7 +81,7 @@ public class LoginSignupActivity extends Activity {
 
         mContext = LoginSignupActivity.this;
         GDatabaseHelper mDatabaseHelper = new GDatabaseHelper(LoginSignupActivity.this);
-        mDatabaseHelper.getInstance(LoginSignupActivity.this);
+        GDatabaseHelper.getInstance(LoginSignupActivity.this);
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_login_signup);
@@ -89,6 +99,9 @@ public class LoginSignupActivity extends Activity {
         mPhoneSignInButton = (Button) findViewById(R.id.account_kit_button_login);
 //        btn_signup = (Button) findViewById(R.id.sign_up_btn);
 //        btn_signup.setVisibility(View.GONE);
+
+        //Initialize Permission Checker
+        checker = new PermissionsChecker(this);
 
         //set position TranslateAnimation(float fromXDelta, float toXDelta, float fromYDelta, float toYDelta
         animation = new TranslateAnimation(0, 0, 300, 0);
@@ -161,11 +174,14 @@ public class LoginSignupActivity extends Activity {
             @Override
             public void onClick(View v) {
                 if (isValidParams()) {
-                    new AdminLoginAsyncTask().execute();
+                    if (CommonUtils.isActiveNetwork(mContext)) {
+                        new AdminLoginAsyncTask().execute();
+                    } else {
+                        showSnack();
+                    }
                 }
             }
         });
-
 
         mPhoneSignInButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -180,13 +196,13 @@ public class LoginSignupActivity extends Activity {
             //Handle new or logged out user
         }
 
-        final Button supervisor_login = (Button)findViewById(R.id.btn_supervisor_login);
-        final Button member_login = (Button)findViewById(R.id.btn_member_login);
+        final Button supervisor_login = (Button) findViewById(R.id.btn_supervisor_login);
+        final Button member_login = (Button) findViewById(R.id.btn_member_login);
 
-        View.OnClickListener topButtonsListener  = new View.OnClickListener(){
+        View.OnClickListener topButtonsListener = new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (view.getId() == R.id.btn_supervisor_login){
+                if (view.getId() == R.id.btn_supervisor_login) {
                     supervisor_login.setSelected(true);
                     supervisor_login.setTextColor(getResources().getColor(R.color.white));
                     member_login.setTextColor(getResources().getColor(R.color.hint_color));
@@ -194,8 +210,7 @@ public class LoginSignupActivity extends Activity {
 
                     mUserRole = "supervisor";
                     tv_member_supervisor.setText("You are logging in as Supervisor");
-                }
-                else{
+                } else {
                     supervisor_login.setSelected(false);
                     member_login.setSelected(true);
                     supervisor_login.setTextColor(getResources().getColor(R.color.hint_color));
@@ -210,6 +225,34 @@ public class LoginSignupActivity extends Activity {
         supervisor_login.setOnClickListener(topButtonsListener);
         member_login.setOnClickListener(topButtonsListener);
         supervisor_login.performClick();
+
+        int myVersion = Build.VERSION.SDK_INT;
+        if (myVersion > Build.VERSION_CODES.LOLLIPOP_MR1) {
+            if (checker.lacksPermissions(PERMISSIONS_READ_SMS)) {
+                startPermissionsActivity(PERMISSIONS_READ_SMS);
+            }
+        }
+    }
+
+    // Showing the status in Snackbar
+    private void showSnack() {
+        InputMethodManager inputManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        inputManager.hideSoftInputFromWindow(this.getCurrentFocus().getWindowToken(),
+                InputMethodManager.HIDE_NOT_ALWAYS);
+
+        CoordinatorLayout coordinatorLayout = (CoordinatorLayout) findViewById(R.id.coordinatorLayout);
+        Snackbar snackbar = Snackbar
+                .make(coordinatorLayout, "No internet connectivity !!!", Snackbar.LENGTH_LONG);
+
+        View sbView = snackbar.getView();
+        sbView.setBackgroundColor(mContext.getResources().getColor(R.color.white));
+        TextView textView = (TextView) sbView.findViewById(android.support.design.R.id.snackbar_text);
+        textView.setTextColor(Color.RED);
+        snackbar.show();
+    }
+
+    private void startPermissionsActivity(String[] permission) {
+        PermissionsActivity.startActivityForResult(this, CHECK_PERMISSION, permission);
     }
 
     public void phoneLogin(final View view) {
@@ -219,6 +262,7 @@ public class LoginSignupActivity extends Activity {
                         LoginType.PHONE,
                         AccountKitActivity.ResponseType.TOKEN); // or .ResponseType.TOKEN
         configurationBuilder.setReceiveSMS(true);
+        configurationBuilder.setReadPhoneStateEnabled(true);
         configurationBuilder.setSMSWhitelist(WHITE_LIST);
         configurationBuilder.setDefaultCountryCode("IN");
         // ... perform additional configuration ...

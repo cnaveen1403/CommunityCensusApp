@@ -295,7 +295,7 @@ public class FamilyDetailsFragment extends Fragment {
                                         .crossFade()
                                         .dontAnimate()
                                         .diskCacheStrategy(DiskCacheStrategy.ALL)
-                                        .placeholder(R.drawable.app_icon)
+                                        .placeholder(R.drawable.ic_family_head)
                                         .into((ImageView)rootView.findViewById(R.id.iv_header_image));
 
                                 mFamilyHead = new FamilyHead(first_name, last_name,

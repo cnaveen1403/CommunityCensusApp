@@ -3,6 +3,7 @@ package com.zolipe.communitycensus.activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.AsyncTask;
@@ -24,6 +25,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.widget.Button;
@@ -110,6 +112,9 @@ public class HomeActivity extends AppCompatActivity
         if (CommonUtils.isActiveNetwork(mContext)) {
             new CommonUtils.getHelperTableAsyncTask(mContext).execute();
         }
+
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
     }
 
     private void initDrawerLayout() {
@@ -324,7 +329,11 @@ public class HomeActivity extends AppCompatActivity
     private void showcaseAdminTutorial() {
         boolean run;
 
-        run = AppData.getBoolean(mContext, "run?");
+        SharedPreferences sharedPreferences = mContext.getSharedPreferences(
+                "showcase_tutorial", Context.MODE_PRIVATE);
+        run = sharedPreferences.getBoolean("admin_tutorial_sup_tab", false);
+
+//        run = AppData.getBoolean(mContext, "admin_tutorial");
 
         if (!run) {//If the buyer already went through the showcases it won't do it again.
             final ViewTarget viewTarget1 = new ViewTarget(R.id.tab_supervisors, this);//Variable holds the item that the showcase will focus on.
@@ -380,7 +389,12 @@ public class HomeActivity extends AppCompatActivity
                             break;
 
                         case 4:
-                            AppData.saveBoolean(mContext, "run?", true);
+                            SharedPreferences.Editor editor = mContext.getSharedPreferences("showcase_tutorial",
+                                    Context.MODE_PRIVATE).edit();
+                            editor.putBoolean("admin_tutorial_sup_tab", true);
+                            editor.commit();
+
+//                            AppData.saveBoolean(mContext, "admin_tutorial", true);
                             showcaseView.hide();
                             break;
                     }
@@ -764,6 +778,7 @@ public class HomeActivity extends AppCompatActivity
 
     @Override
     public void onNetworkConnectionChanged(boolean isConnected) {
+        Log.e(TAG, "onNetworkConnectionChanged: isConnected >>> " + isConnected);
         Intent intent = new Intent(HomeActivity.this, CensusService.class);
         startService(intent);
         showSnack(isConnected);

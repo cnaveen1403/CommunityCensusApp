@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    android:background="@drawable/paytm_border">
+    android:background="@color/colorPrimary">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -15,7 +15,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/paytm_color"
+            android:background="@color/colorPrimary"
             android:orientation="horizontal"
             android:padding="8dp">
 
@@ -55,6 +55,7 @@
             android:layout_height="40dp"
             android:layout_marginLeft="8dp"
             android:layout_marginRight="8dp"
+            android:layout_marginTop="8dp"
             android:paddingLeft="8dp"
             android:background="@android:color/transparent"
             android:hint="Subject">
@@ -72,6 +73,7 @@
             android:layout_width="match_parent"
             android:layout_height="200dp"
             android:paddingLeft="8dp"
+            android:layout_marginTop="8dp"
             android:background="@android:color/transparent"
             android:hint="Compose email"
             android:gravity="top"
@@ -83,7 +85,7 @@
             android:background="@color/hint_color" />
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="54dp"
             android:orientation="horizontal"
             android:gravity="end"
             android:layout_marginTop="8dp">
@@ -91,17 +93,19 @@
                 android:id="@+id/btn_cancel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
                 android:text="CANCEL"
                 android:theme="@style/MyButton"
-                android:textColor="@color/paytm_color"
+                android:textColor="@color/colorPrimary"
                 style="@style/Widget.AppCompat.Button.Borderless"/>
             <Button
                 android:id="@+id/btn_send"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
                 android:text="SEND"
                 android:theme="@style/SEND"
-                android:textColor="@color/paytm_color"
+                android:textColor="@color/colorPrimary"
                 style="@style/Widget.AppCompat.Button.Borderless"
                 android:layout_marginLeft="8dp"/>
         </LinearLayout>

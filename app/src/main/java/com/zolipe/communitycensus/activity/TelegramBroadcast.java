@@ -9,6 +9,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -22,25 +24,32 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.inputmethod.InputMethodManager;
 import android.webkit.MimeTypeMap;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.zolipe.communitycensus.R;
+import com.zolipe.communitycensus.app.AppData;
 import com.zolipe.communitycensus.permissions.PermissionsActivity;
 import com.zolipe.communitycensus.permissions.PermissionsChecker;
 import com.zolipe.communitycensus.util.CensusConstants;
 import com.zolipe.communitycensus.util.ConnectToServer;
+import com.zolipe.communitycensus.util.SelectDocument;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
@@ -55,6 +64,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+
+import static com.bumptech.glide.load.resource.bitmap.TransformationUtils.rotateImage;
 
 public class TelegramBroadcast extends AppCompatActivity implements View.OnClickListener {
 
@@ -110,7 +121,7 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
         et_input = (EditText) findViewById(R.id.et_input);
         sendMessageButton = (ImageButton) findViewById(R.id.sendMessageButton);
         chk_is_group_message = (CheckBox) findViewById(R.id.chk_is_group_message);
-        fl_background = (FrameLayout)findViewById(R.id.fl_background);
+        fl_background = (FrameLayout) findViewById(R.id.fl_background);
 //        video_btn = (ImageButton) findViewById(R.id.video_img_btn);
 //        location_btn = (ImageButton) findViewById(R.id.location_img_btn);
 //        contact_btn = (ImageButton) findViewById(R.id.contact_img_btn);
@@ -163,7 +174,7 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
                 break;
             case R.id.sendMessageButton:
                 String sms_text = et_input.getText().toString();
-                if (sms_text.equals("")){
+                if (sms_text.equals("")) {
                     et_input.setError("Please enter your message !!!");
                     return;
                 }
@@ -323,7 +334,7 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
         }
     }
 
-    private void SendImageMultiPart() throws Exception {
+    private void SendImageMultiPart(String caption) throws Exception {
         final Dialog progressDialog = new Dialog(TelegramBroadcast.this, R.style.progress_dialog);
         progressDialog.setContentView(R.layout.progress_dialog);
         progressDialog.setCancelable(false);
@@ -340,9 +351,6 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
 //              contentType = "video/mp4";
         }
 
-        Log.e("UploadToServerActivity", "file: " + file.getPath());
-        Log.e("UploadToServerActivity", "contentType: " + contentType);
-
         RequestBody fileBody = RequestBody.create(MediaType.parse(contentType), file);
 
         final String filename = "file_" + System.currentTimeMillis() / 1000L;
@@ -353,7 +361,7 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
                 //        scheduled_question_id => question id you will receive while calling interview question
                 //        video_file => it supports mp4 and file size upto 100mb
 
-                .addFormDataPart("caption", "")
+                .addFormDataPart("caption", caption)
                 .addFormDataPart("file", filename + ".jpg", fileBody)
                 .build();
 
@@ -597,23 +605,24 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
                     //handle video
                     File f = new File(getRealPathFromURI(getApplicationContext(), selectedMediaUri));
                     selectedFilePath = f.getPath();
-                    try {
+                    showImageSendDialog(selectedMediaUri);
+                    /*try {
                         SendImageMultiPart();
                     } catch (Exception e) {
                         e.printStackTrace();
-                    }
-                    //   CallTicketApi(f.getPath());
+                    }*/
                 }
             } else if (requestCode == REQUEST_CAMERA) {
                 Uri selectedMediaUri = mCapturedImageURI;
                 //handle video
                 File f = new File(getRealPathFromURI(getApplicationContext(), selectedMediaUri));
                 selectedFilePath = f.getPath();
-                try {
+                showImageSendDialog(selectedMediaUri);
+                /*try {
                     SendImageMultiPart();
                 } catch (Exception e) {
                     e.printStackTrace();
-                }
+                }*/
             } else if (requestCode == REQUEST_AUDIO) {
                 //the selected audio.
                 Uri uri = data.getData();
@@ -628,6 +637,104 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
 
 
         }
+    }
+
+    private void showImageSendDialog(final Uri selectedMediaUri) {
+        final Dialog dialog = new Dialog(mContext, R.style.CustomDialog);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.telegram_send_image);
+
+        Button btn_no = (Button) dialog.findViewById(R.id.btn_cancel);
+        Button btn_yes = (Button) dialog.findViewById(R.id.btn_send);
+        final ImageView image = (ImageView) dialog.findViewById(R.id.ivAddProfileImage);
+        EditText editText = (EditText)dialog.findViewById(R.id.et_caption);
+        final String caption = editText.getText().toString();
+
+        try {
+            Bitmap imageBitmap = MediaStore.Images.Media.getBitmap(mContext.getContentResolver(), selectedMediaUri);
+            imageBitmap = imageOrientationValidator(imageBitmap, SelectDocument.getPath(mContext, selectedMediaUri));
+            Uri correctedUri = getImageUri(imageBitmap);
+            image.setImageURI(correctedUri);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        btn_no.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+        btn_yes.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+//                mLoggedIn = false;
+//                mDigitsSession = null;
+                AppData.saveBoolean(getApplicationContext(), CensusConstants.isLoggedIn, false);
+                AppData.clearPreferences(getApplicationContext());
+                finishAffinity();
+                Intent intent = new Intent(getApplicationContext(), LoginSignupActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+                overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
+            }
+        });
+
+        btn_no.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+        btn_yes.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+                try {
+                    SendImageMultiPart(caption);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        dialog.show();
+    }
+
+    private Bitmap imageOrientationValidator(Bitmap bitmap, String path) {
+
+        ExifInterface ei;
+        try {
+            ei = new ExifInterface(path);
+            int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+
+            switch (orientation) {
+                case ExifInterface.ORIENTATION_ROTATE_90:
+                    bitmap = rotateImage(bitmap, 90);
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_180:
+                    bitmap = rotateImage(bitmap, 180);
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_270:
+                    bitmap = rotateImage(bitmap, 270);
+                    break;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bitmap;
+    }
+
+    private Uri getImageUri(Bitmap image) {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        image.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+        String path = MediaStore.Images.Media.insertImage(getContentResolver(), image, "Title", null);
+        return Uri.parse(path);
     }
 
     public static String getRealPathFromURI(Context ctx, Uri contentUri) {
