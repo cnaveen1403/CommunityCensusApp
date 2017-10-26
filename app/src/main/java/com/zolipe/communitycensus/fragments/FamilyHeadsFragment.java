@@ -78,18 +78,6 @@ public class FamilyHeadsFragment extends Fragment implements FamilyHeadsListItem
 
         mUserRole = AppData.getString(mContext, CensusConstants.userRole);
 
-        if (CommonUtils.isActiveNetwork(mContext)) {
-            if(mUserRole.equals("admin"))
-                getFamilyHeads();
-
-            if (mUserRole.equals("supervisor"))
-                getFamilyHeadsForSupervisor();
-
-            new CommonUtils.GetFamilyHeadsListAsyncTask(mContext).execute("");
-        } else {
-            getFamilyHeads();
-        }
-
         recyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view);
         rl_data = (RelativeLayout) rootView.findViewById(R.id.rl_data);
         rl_error = (RelativeLayout) rootView.findViewById(R.id.rl_error);
@@ -115,7 +103,27 @@ public class FamilyHeadsFragment extends Fragment implements FamilyHeadsListItem
             }
         });
 
-        et_search.addTextChangedListener(new TextWatcher() {
+        if (CommonUtils.isActiveNetwork(mContext)) {
+            new CommonUtils.GetFamilyHeadsListAsyncTask(mContext).execute("");
+        } else {
+            getFamilyHeads();
+        }
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                //Your logic that service will perform will be placed here
+                //In this example we are just looping and waits for 1000 milliseconds in each loop.
+                try {
+                    Thread.sleep(5000);
+                    getFamilyHeads();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+       /* et_search.addTextChangedListener(new TextWatcher() {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -132,7 +140,7 @@ public class FamilyHeadsFragment extends Fragment implements FamilyHeadsListItem
             @Override
             public void afterTextChanged(Editable s) {
             }
-        });
+        });*/
 
         et_search.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -268,7 +276,6 @@ public class FamilyHeadsFragment extends Fragment implements FamilyHeadsListItem
                                         bStatus = false;
                                     }
                                 }
-                                Log.d(TAG, "bStatus >>>> " + bStatus);
                                 if (bStatus) {
                                     headsList.add(new FamilyHead(first_name, last_name,
                                             phone_number, aadhaar, email,

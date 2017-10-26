@@ -53,11 +53,11 @@ public class FamilyDetailsActivity extends AppCompatActivity {
 
     private Context mContext;
     ArrayList<FamilyHead> familyHeadsList = new ArrayList<>();
-    HorizontalListView familyMembersList;
+    HorizontalListView familyMembersListView;
     Button btn_add_member, btn_retry;
     ScrollView sv_head_detail;
     RelativeLayout rl_family_members, rl_error;
-    TextView tv_no_data;
+    TextView tv_no_data, tv_view_familyHead;
     FamilyHead mFamilyHead;
     CircleImageView iv_header_image;
     private String TAG = "FamilyDetails";
@@ -79,22 +79,32 @@ public class FamilyDetailsActivity extends AppCompatActivity {
         rl_family_members = (RelativeLayout) findViewById(R.id.rl_family_members);
         rl_error = (RelativeLayout) findViewById(R.id.rl_error);
         tv_no_data = (TextView) findViewById(R.id.tv_no_data);
+        tv_view_familyHead = (TextView) findViewById(R.id.tv_view_familyHead);
         iv_header_image = (CircleImageView) findViewById(R.id.iv_header_image);
 
-        familyMembersList = (HorizontalListView) findViewById(R.id.membersList);
+        familyMembersListView = (HorizontalListView) findViewById(R.id.membersList);
 
         if (getIntent().getExtras() != null) {
             mFamilyHead = getIntent().getExtras().getParcelable("family_head");
-            Log.e(TAG, "onCreate: head aadahaar >>> " + mFamilyHead.getAadhaar());
         }
 
-        if (CommonUtils.isActiveNetwork(mContext)) {
+        /*if (CommonUtils.isActiveNetwork(mContext)) {
             showFamilyProfiles (mFamilyHead.getAadhaar());
             new GetFamilyDetailsAsyncTask().execute(mFamilyHead.getAadhaar());
         }else {
             showFamilyProfiles (mFamilyHead.getAadhaar());
-        }
-        familyMembersList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        }*/
+
+        tv_view_familyHead.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(mContext, ViewMember.class);
+                intent.putExtra("FamilyMember", mFamilyHead);
+                startActivity(intent);
+                overridePendingTransition(R.anim.slide_from_right, R.anim.slide_to_left);
+            }
+        });
+        familyMembersListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 FamilyHead tempObj = familyHeadsList.get(position);
@@ -102,7 +112,6 @@ public class FamilyDetailsActivity extends AppCompatActivity {
                 intent.putExtra("FamilyMember", tempObj);
                 startActivity(intent);
                 overridePendingTransition(R.anim.slide_from_right, R.anim.slide_to_left);
-//                showMember (tempObj);
             }
         });
 
@@ -111,9 +120,6 @@ public class FamilyDetailsActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(FamilyDetailsActivity.this, AddFamilyMember.class);
                 intent.putExtra("family_head", mFamilyHead);
-                /*intent.putExtra("head_aadhaar", mHeadAddhaar);
-                intent.putExtra("member_name", familyHeadName);
-                intent.putExtra("member_url", familyHeadImgUrl);*/
                 startActivityForResult(intent, 1);
                 overridePendingTransition(R.anim.slide_from_right, R.anim.slide_to_left);
             }
@@ -139,7 +145,7 @@ public class FamilyDetailsActivity extends AppCompatActivity {
                         .crossFade()
                         .dontAnimate()
                         .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .placeholder(R.drawable.ic_supervisor_list)
+                        .placeholder(R.drawable.ic_family_head)
                         .into(ivPreview);
                 ivPreview.setBackgroundColor(getResources().getColor(R.color.colorAccent));
 
@@ -159,9 +165,6 @@ public class FamilyDetailsActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-//                Intent intent = new Intent(FamilyDetailsActivity.this, FamilyMembers.class);
-//                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//                startActivity(intent);
                 finish();
                 overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
                 return true;
@@ -227,8 +230,8 @@ public class FamilyDetailsActivity extends AppCompatActivity {
         // onPostExecute displays the results of the AsyncTask.
         @Override
         protected void onPostExecute(String result) {
-            Log.e(TAG, "onPostExecute: result >>>> "  + result );
             progressDialog.dismiss();
+            Log.e(TAG, "onPostExecute: GetFamilyDetailsAsyncTask >>>> " + result);
             if (result.equals("") || result.equals(null) || result.isEmpty()) {
 //                showServerError();
             } else {
@@ -236,7 +239,6 @@ public class FamilyDetailsActivity extends AppCompatActivity {
                     JSONObject jsonObject = new JSONObject(result);
                     String status = jsonObject.getString("status");
                     String status_code = jsonObject.getString("status_code");
-                    String response = jsonObject.getString("response");
 
                     if (status.equals("error") && status_code.equals("1003")) {
                         showFamilyProfiles(mFamilyHead.getAadhaar());
@@ -244,23 +246,16 @@ public class FamilyDetailsActivity extends AppCompatActivity {
                         JSONArray jsonArray = jsonObject.getJSONArray("data");
                         for (int i = 0; i < jsonArray.length(); i++) {
                             JSONObject explrObject = jsonArray.getJSONObject(i);
-//                            String isFamilyHead = explrObject.getString("isfamily_head");
-//                            if (isFamilyHead.equals("no")) {
                                 CommonUtils.saveMembersToLocalDB(mContext, explrObject);
 //                            }
                         }
 
                         showFamilyProfiles (mFamilyHead.getAadhaar());
                     } else if (status.equals("success") && status_code.equals("1001")) {
-                        /*sv_head_detail.setVisibility(View.GONE);
-                        rl_family_members.setVisibility(View.GONE);
-                        rl_error.setVisibility(View.VISIBLE);
-                        tv_no_data.setText("Data Not available, Please add Members.");*/
                         showFamilyProfiles(mFamilyHead.getAadhaar());
                     }
                 } catch (JSONException jsonException) {
                     jsonException.printStackTrace();
-//                    showServerError();
                 }
             }
         }
@@ -269,7 +264,6 @@ public class FamilyDetailsActivity extends AppCompatActivity {
     private void showFamilyProfiles(String head_aadhaar) {
         final DbAsyncTask dbATask = new DbAsyncTask(mContext, false, null);
         DbParameter dbParams = new DbParameter();
-        Log.e(TAG, "showFamilyProfiles: inside the offline fetch");
         ArrayList<Object> parms = new ArrayList<Object>();
         parms.add(head_aadhaar);
         dbParams.addParamterList(parms);
@@ -304,7 +298,6 @@ public class FamilyDetailsActivity extends AppCompatActivity {
                 if (cur.moveToFirst()) {
                     do {
                         try {
-                            String headId = cur.getString(cur.getColumnIndex("familyHeadId"));
                             String first_name = cur.getString(cur.getColumnIndex("first_name"));
                             String last_name = cur.getString(cur.getColumnIndex("last_name"));
                             String phone_number = cur.getString(cur.getColumnIndex("phone_number"));
@@ -323,9 +316,6 @@ public class FamilyDetailsActivity extends AppCompatActivity {
                             String isSynced = cur.getString(cur.getColumnIndex("isSynced"));
                             String state_id = cur.getString(cur.getColumnIndex("state_id"));
                             String city_id = cur.getString(cur.getColumnIndex("city_id"));
-//                            Log.e(TAG, "execPostDbAction: first_name >> " + first_name);
-//                            Log.e(TAG, "execPostDbAction: last_name >> " + last_name);
-//                            Log.e(TAG, "execPostDbAction: aadhaar >> " + aadhaar);
 
                             if (isFamilyHead.equalsIgnoreCase("yes")) {
                                 ((TextView) findViewById(R.id.firstNameTV)).setText(first_name);
@@ -343,34 +333,32 @@ public class FamilyDetailsActivity extends AppCompatActivity {
                                         .placeholder(R.drawable.ic_family_head)
                                         .into((ImageView) findViewById(R.id.iv_header_image));
                             } else {
-                                String relation = getRelationName(relationship);
+
                                 if (familyHeadsList.size() == 0) {
                                     familyHeadsList.add(new FamilyHead(first_name, last_name,
-                                            phone_number, aadhaar, email, address, gender, image_url,
-                                            age, relation, size, zipcode, dob, familyHeadId, isFamilyHead
-                                            , isSynced, state_id, city_id));
+                                            phone_number, aadhaar, email,
+                                            address, gender, image_url,
+                                            age, relationship, size, zipcode,
+                                            dob, familyHeadId, isFamilyHead,
+                                            isSynced, state_id, city_id));
                                 } else {
                                     boolean bStatus = true;
                                     Iterator<FamilyHead> iter = familyHeadsList.iterator();
                                     while (iter.hasNext()) {
-                                        Log.d(TAG, "============ Inside if condition iterator ============= ");
                                         FamilyHead obj = iter.next();
                                         if (aadhaar.equals(obj.getAadhaar())) {
                                             bStatus = false;
                                         }
                                     }
-                                    Log.d(TAG, "bStatus >>>> " + bStatus);
                                     if (bStatus) {
                                         familyHeadsList.add(new FamilyHead(first_name, last_name,
-                                                phone_number, aadhaar, email, address, gender, image_url,
-                                                age, relation, size, zipcode, dob, familyHeadId, isFamilyHead
-                                                , isSynced, state_id, city_id));
+                                                phone_number, aadhaar, email,
+                                                address, gender, image_url,
+                                                age, relationship, size, zipcode,
+                                                dob, familyHeadId, isFamilyHead,
+                                                isSynced, state_id, city_id));
                                     }
                                 }
-
-                               /* familyHeadsList.add(new FamilyHead(headId, first_name, last_name,
-                                        phone_number, aadhaar, email, address, gender, image_url,
-                                        age, relation, size, zipcode, dob, familyHeadId, isFamilyHead, isSynced));*/
                             }
                         } catch (Exception e) {
                             // TODO Auto-generated catch block
@@ -379,7 +367,7 @@ public class FamilyDetailsActivity extends AppCompatActivity {
                     }
                     while (cur.moveToNext());
                     HorizantalListAdapter horizantalListAdapter = new HorizantalListAdapter(FamilyDetailsActivity.this, familyHeadsList);
-                    familyMembersList.setAdapter(horizantalListAdapter);
+                    familyMembersListView.setAdapter(horizantalListAdapter);
                     horizantalListAdapter.notifyDataSetChanged();
                 }
 
@@ -396,22 +384,22 @@ public class FamilyDetailsActivity extends AppCompatActivity {
         }
     }
 
-    private void showServerError() {
+    /*private void showServerError() {
         sv_head_detail.setVisibility(View.GONE);
         rl_family_members.setVisibility(View.GONE);
         rl_error.setVisibility(View.VISIBLE);
         tv_no_data.setText("Server Not Responding !!! Please try again later.");
-    }
+    }*/
 
-    private String getRelationName (String relation_id){
+    private String getRelationId (String relation_name){
         String relation = "";
         GDatabaseHelper dbHelper = GDatabaseHelper.getInstance(FamilyDetailsActivity.this);
-        String query = "SELECT relation_name FROM RelationsInfo WHERE relation_id = " + relation_id;
+        String query = "SELECT relation_id FROM RelationsInfo WHERE relation_name = " + relation_name;
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         Cursor cursor = db.rawQuery(query, null);
         if(cursor.moveToFirst()){
             do{
-                relation = cursor.getString(cursor.getColumnIndex("relation_name"));
+                relation = cursor.getString(cursor.getColumnIndex("relation_id"));
             }while(cursor.moveToNext());
         }
         cursor.close();

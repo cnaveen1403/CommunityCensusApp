@@ -1,19 +1,17 @@
 package com.zolipe.communitycensus.activity;
 
 import android.Manifest;
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.CursorLoader;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
@@ -23,21 +21,20 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
-import android.view.animation.AccelerateDecelerateInterpolator;
-import android.view.inputmethod.InputMethodManager;
 import android.webkit.MimeTypeMap;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.zolipe.communitycensus.R;
-import com.zolipe.communitycensus.app.AppData;
 import com.zolipe.communitycensus.permissions.PermissionsActivity;
 import com.zolipe.communitycensus.permissions.PermissionsChecker;
 import com.zolipe.communitycensus.util.CensusConstants;
@@ -54,8 +51,6 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import io.codetail.animation.SupportAnimator;
-import io.codetail.animation.ViewAnimationUtils;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -69,20 +64,22 @@ import static com.bumptech.glide.load.resource.bitmap.TransformationUtils.rotate
 
 public class TelegramBroadcast extends AppCompatActivity implements View.OnClickListener {
 
+    private String TAG = "TelegramBroadcast";
+
     PermissionsChecker checker;
     private static final String[] PERMISSIONS_READ_STORAGE = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.CAMERA};
-    private LinearLayout mRevealView;
-    private boolean hidden = true;
-    private ImageButton gallery_btn, photo_btn, audio_btn;
-    EditText et_input;
+    private Button gallery_btn, photo_btn, audio_btn;
+    EditText et_input, et_search;
+    Spinner spinner_select;
     ImageButton sendMessageButton;
     CheckBox chk_is_group_message;
     private static final int IMAGE_PICKER_SELECT = 7, REQUEST_CAMERA = 2, REQUEST_AUDIO = 1;
     String selectedFilePath, selectedFilePathAudio,
             selectedFilePathDoc;
     private Context mContext;
+
     private Uri mCapturedImageURI;
-    FrameLayout fl_background;
+    String[] ITEMS = {"All", "By Zipcode"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,16 +109,38 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
         setSupportActionBar(toolbar);
 
         mContext = TelegramBroadcast.this;
-        mRevealView = (LinearLayout) findViewById(R.id.reveal_items);
-        mRevealView.setVisibility(View.GONE);
 
-        gallery_btn = (ImageButton) findViewById(R.id.gallery_img_btn);
-        photo_btn = (ImageButton) findViewById(R.id.photo_img_btn);
-        audio_btn = (ImageButton) findViewById(R.id.audio_img_btn);
+        gallery_btn = (Button) findViewById(R.id.btn_gallery);
+        photo_btn = (Button) findViewById(R.id.btn_camera);
+        audio_btn = (Button) findViewById(R.id.btn_audio);
         et_input = (EditText) findViewById(R.id.et_input);
+
+        et_search = (EditText) findViewById(R.id.et_search_for_tele);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(mContext, android.R.layout.simple_spinner_item, ITEMS);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner_select = (Spinner) findViewById(R.id.spinner_select);
+        spinner_select.setAdapter(adapter);
+
+        spinner_select.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position == 0) {
+                    et_search.setText("");
+                    et_search.setVisibility(View.GONE);
+                    spinner_select.setSelection(0);
+                } else {
+                    et_search.setVisibility(View.VISIBLE);
+                    et_search.requestFocus();
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+
         sendMessageButton = (ImageButton) findViewById(R.id.sendMessageButton);
         chk_is_group_message = (CheckBox) findViewById(R.id.chk_is_group_message);
-        fl_background = (FrameLayout) findViewById(R.id.fl_background);
 //        video_btn = (ImageButton) findViewById(R.id.video_img_btn);
 //        location_btn = (ImageButton) findViewById(R.id.location_img_btn);
 //        contact_btn = (ImageButton) findViewById(R.id.contact_img_btn);
@@ -130,7 +149,7 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
         photo_btn.setOnClickListener(this);
         audio_btn.setOnClickListener(this);
         sendMessageButton.setOnClickListener(this);
-        fl_background.setOnClickListener(this);
+        chk_is_group_message.setOnClickListener(this);
 //        audio_btn.setOnClickListener(this);
 //        location_btn.setOnClickListener(this);
 //        contact_btn.setOnClickListener(this);
@@ -148,15 +167,24 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
 
     @Override
     public void onClick(View v) {
-        hideRevealView();
         switch (v.getId()) {
 
-            case R.id.gallery_img_btn:
+            case R.id.chk_is_group_message:
+                Log.e(TAG, "onClick: chk_is_group_message.isChecked() ?>>> " + chk_is_group_message.isChecked());
+                if (chk_is_group_message.isChecked()){
+                    findViewById(R.id.ll_select_members).setVisibility(View.VISIBLE);
+                }else{
+                    et_search.setVisibility(View.GONE);
+                    spinner_select.setSelection(0);
+                    findViewById(R.id.ll_select_members).setVisibility(View.GONE);
+                }
+                break;
+            case R.id.btn_gallery:
                 Intent pickIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
                 pickIntent.setType("image/*");
                 startActivityForResult(pickIntent, IMAGE_PICKER_SELECT);
                 break;
-            case R.id.photo_img_btn:
+            case R.id.btn_camera:
                 String fileName = "temp.jpg";
                 ContentValues values = new ContentValues();
                 values.put(MediaStore.Images.Media.TITLE, fileName);
@@ -166,18 +194,23 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
                 intent.putExtra(MediaStore.EXTRA_OUTPUT, mCapturedImageURI);
                 startActivityForResult(intent, REQUEST_CAMERA);
                 break;
-            case R.id.audio_img_btn:
-                Intent intent_upload = new Intent();
+            case R.id.btn_audio:
+                Intent intent_upload = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI);
                 intent_upload.setType("audio/*");
                 intent_upload.setAction(Intent.ACTION_GET_CONTENT);
                 startActivityForResult(intent_upload, REQUEST_AUDIO);
                 break;
             case R.id.sendMessageButton:
                 String sms_text = et_input.getText().toString();
-                if (sms_text.equals("")) {
+                String zipcode = et_search.getText().toString();
+                if (spinner_select.getSelectedItemPosition() > 0 && zipcode.equals("")) {
+                    et_search.setError("please enter zipcode");
+                    return;
+                } else if (sms_text.equals("")) {
                     et_input.setError("Please enter your message !!!");
                     return;
                 }
+
                 String URL = CensusConstants.BASE_URL + CensusConstants.SEND_TELEGRAM_URL;
                 String key = "message";
                 if (chk_is_group_message.isChecked()) {
@@ -185,33 +218,13 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
                     URL = CensusConstants.BASE_URL + CensusConstants.SEND_GROUP_TELEGRAM_URL;
                 }
 
-                new sendTelegramAsyncTask().execute(sms_text, URL, key);
+                new sendTelegramAsyncTask().execute(sms_text, URL, key, zipcode);
                 break;
-            case R.id.fl_background:
-                hideRevealView();
-                break;
-           /* case R.id.audio_img_btn:
-
-                break;
-            case R.id.location_img_btn:
-
-                break;
-            case R.id.contact_img_btn:
-
-                break;*/
-        }
-    }
-
-    private void hideRevealView() {
-        if (mRevealView.getVisibility() == View.VISIBLE) {
-            mRevealView.setVisibility(View.GONE);
-            hidden = true;
         }
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.broadcast_menu, menu);
         return true;
 
     }
@@ -219,76 +232,6 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.action_clip:
-
-                int cx = (mRevealView.getLeft() + mRevealView.getRight());
-                int cy = mRevealView.getTop();
-                int radius = Math.max(mRevealView.getWidth(), mRevealView.getHeight());
-
-                //Below Android LOLIPOP Version
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                    SupportAnimator animator =
-                            ViewAnimationUtils.createCircularReveal(mRevealView, cx, cy, 0, radius);
-                    animator.setInterpolator(new AccelerateDecelerateInterpolator());
-                    animator.setDuration(700);
-
-                    SupportAnimator animator_reverse = animator.reverse();
-
-                    if (hidden) {
-                        mRevealView.setVisibility(View.VISIBLE);
-                        animator.start();
-                        hidden = false;
-                    } else {
-                        animator_reverse.addListener(new SupportAnimator.AnimatorListener() {
-                            @Override
-                            public void onAnimationStart() {
-
-                            }
-
-                            @Override
-                            public void onAnimationEnd() {
-                                mRevealView.setVisibility(View.INVISIBLE);
-                                hidden = true;
-
-                            }
-
-                            @Override
-                            public void onAnimationCancel() {
-
-                            }
-
-                            @Override
-                            public void onAnimationRepeat() {
-
-                            }
-                        });
-                        animator_reverse.start();
-                    }
-                }
-                // Android LOLIPOP And ABOVE Version
-                else {
-                    if (hidden) {
-                        Animator anim = android.view.ViewAnimationUtils.
-                                createCircularReveal(mRevealView, cx, cy, 0, radius);
-                        mRevealView.setVisibility(View.VISIBLE);
-                        anim.start();
-                        hidden = false;
-                    } else {
-                        Animator anim = android.view.ViewAnimationUtils.
-                                createCircularReveal(mRevealView, cx, cy, radius, 0);
-                        anim.addListener(new AnimatorListenerAdapter() {
-                            @Override
-                            public void onAnimationEnd(Animator animation) {
-                                super.onAnimationEnd(animation);
-                                mRevealView.setVisibility(View.INVISIBLE);
-                                hidden = true;
-                            }
-                        });
-                        anim.start();
-                    }
-                }
-                return true;
-
             case android.R.id.home:
                 supportFinishAfterTransition();
                 finish();
@@ -319,8 +262,13 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
             progressDialog.dismiss();
             Toast.makeText(mContext, "Your message has been sent succesfully !!!", Toast.LENGTH_SHORT).show();
             et_input.setText("");
-            if (chk_is_group_message.isChecked())
+            et_search.setText("");
+            if (chk_is_group_message.isChecked()) {
+                findViewById(R.id.ll_select_members).setVisibility(View.GONE);
+                et_search.setVisibility(View.GONE);
+                spinner_select.setSelection(0);
                 chk_is_group_message.setChecked(false);
+            }
         }
 
         @Override
@@ -328,13 +276,18 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
             String sms_text = params[0];
             String url = params[1];
             String key = params[2];
+            String zipcode = params[3];
             List<NameValuePair> parms = new LinkedList<NameValuePair>();
             parms.add(new BasicNameValuePair(key, sms_text));
+
+            if (url.equals(CensusConstants.SEND_TELEGRAM_URL))
+                parms.add(new BasicNameValuePair("zipcode", zipcode));
+
             return new ConnectToServer().getDataFromUrl(url, parms);
         }
     }
 
-    private void SendImageMultiPart(String caption) throws Exception {
+    private void SendImageMultiPart(String caption, String zipcode) throws Exception {
         final Dialog progressDialog = new Dialog(TelegramBroadcast.this, R.style.progress_dialog);
         progressDialog.setContentView(R.layout.progress_dialog);
         progressDialog.setCancelable(false);
@@ -362,6 +315,7 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
                 //        video_file => it supports mp4 and file size upto 100mb
 
                 .addFormDataPart("caption", caption)
+                .addFormDataPart("zipcode", zipcode)
                 .addFormDataPart("file", filename + ".jpg", fileBody)
                 .build();
 
@@ -415,7 +369,7 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
         });
     }
 
-    private void execMultipartPostAudio() throws Exception {
+    private void execMultipartPostAudio(String zipcode) throws Exception {
         final Dialog progressDialog = new Dialog(TelegramBroadcast.this, R.style.progress_dialog);
         progressDialog.setContentView(R.layout.progress_dialog);
         progressDialog.setCancelable(false);
@@ -432,9 +386,6 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
 //              contentType = "video/mp4";
         }
 
-        Log.e("UploadToServerActivity", "file: " + file.getPath());
-        Log.e("UploadToServerActivity", "contentType: " + contentType);
-
         RequestBody fileBody = RequestBody.create(MediaType.parse(contentType), file);
 
         final String filename = "file_" + System.currentTimeMillis() / 1000L;
@@ -445,7 +396,7 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
                 //        scheduled_question_id => question id you will receive while calling interview question
                 //        video_file => it supports mp4 and file size upto 100mb
 
-//                  .addFormDataPart("caption", "Pavan")
+                  .addFormDataPart("zipcode", zipcode)
                 .addFormDataPart("file", filename + ".mp3", fileBody)
                 .build();
 
@@ -480,7 +431,6 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
                             }
                         });
                         customDialog.show();
-                        Log.d("NewFarm", "nah it is not done ya");
                     }
                 });
             }
@@ -517,9 +467,6 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
             contentType = "docx/pdf";
 //              contentType = "video/mp4";
         }
-
-        Log.e("UploadToServerActivity", "file: " + file.getPath());
-        Log.e("UploadToServerActivity", "contentType: " + contentType);
 
         RequestBody fileBody = RequestBody.create(MediaType.parse(contentType), file);
 
@@ -577,9 +524,8 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
                     @Override
                     public void run() {
                         progressDialog.dismiss();
-                        Log.d("Response ", "Response == >>> " + response.toString());
-                        Log.d("Response ", "Response == >>> " + response.message().toString());
-
+                        Log.e("Response ", "Response == >>> " + response.toString());
+                        Log.e("Response ", "Response == >>> " + response.message().toString());
                     }
                 });
             }
@@ -606,11 +552,6 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
                     File f = new File(getRealPathFromURI(getApplicationContext(), selectedMediaUri));
                     selectedFilePath = f.getPath();
                     showImageSendDialog(selectedMediaUri);
-                    /*try {
-                        SendImageMultiPart();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }*/
                 }
             } else if (requestCode == REQUEST_CAMERA) {
                 Uri selectedMediaUri = mCapturedImageURI;
@@ -618,25 +559,93 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
                 File f = new File(getRealPathFromURI(getApplicationContext(), selectedMediaUri));
                 selectedFilePath = f.getPath();
                 showImageSendDialog(selectedMediaUri);
-                /*try {
-                    SendImageMultiPart();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }*/
             } else if (requestCode == REQUEST_AUDIO) {
-                //the selected audio.
-                Uri uri = data.getData();
-                File f = new File(getRealPathFromURI(getApplicationContext(), uri));
-                selectedFilePathAudio = f.getPath();
+                if (resultCode == Activity.RESULT_OK) {
+                    try {
+                        String path = getRealPathFromAudioURI(getApplicationContext(), data.getData());
+                        File audio = new File(path);
+                        selectedFilePathAudio = audio.getPath();
+                        showSendAudioDialog();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
+    private String getRealPathFromAudioURI(Context ctx, Uri uri) {
+            String[] proj = { MediaStore.Audio.Media.DATA };
+            CursorLoader loader = new CursorLoader(ctx, uri, proj, null, null, null);
+            Cursor cursor = loader.loadInBackground();
+            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
+            cursor.moveToFirst();
+            return cursor.getString(column_index);
+    }
+
+
+    private void showSendAudioDialog() {
+        final Dialog dialog = new Dialog(mContext, R.style.CustomDialog);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.telegram_send_audio);
+
+        final EditText et_search = (EditText) dialog.findViewById(R.id.et_search_for_tele);
+        Button btn_no = (Button) dialog.findViewById(R.id.btn_cancel);
+        Button btn_yes = (Button) dialog.findViewById(R.id.btn_send);
+        TextView tv_filepath = (TextView) dialog.findViewById(R.id.tv_filepath);
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(mContext, android.R.layout.simple_spinner_item, ITEMS);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        final Spinner spinner_select = (Spinner) dialog.findViewById(R.id.spinner_select);
+        spinner_select.setAdapter(adapter);
+
+        tv_filepath.setText("File : " + selectedFilePathAudio);
+
+        spinner_select.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position == 0) {
+                    et_search.setText("");
+                    et_search.setVisibility(View.GONE);
+                    spinner_select.setSelection(0);
+                } else {
+                    et_search.setVisibility(View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+
+        btn_no.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+        btn_yes.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
                 try {
-                    execMultipartPostAudio();
+                    String zipcode = et_search.getText().toString();
+                    if (spinner_select.getSelectedItemPosition() > 0 && zipcode.equals("")) {
+                        et_search.setError("please enter zipcode");
+                    } else {
+                        et_input.setError(null);
+                        et_search.setError(null);
+                        execMultipartPostAudio(zipcode);
+                        dialog.dismiss();
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
+        });
 
-
-        }
+        dialog.show();
     }
 
     private void showImageSendDialog(final Uri selectedMediaUri) {
@@ -644,11 +653,33 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.telegram_send_image);
 
+        final EditText et_search = (EditText) dialog.findViewById(R.id.et_search_for_tele);
         Button btn_no = (Button) dialog.findViewById(R.id.btn_cancel);
         Button btn_yes = (Button) dialog.findViewById(R.id.btn_send);
         final ImageView image = (ImageView) dialog.findViewById(R.id.ivAddProfileImage);
-        EditText editText = (EditText)dialog.findViewById(R.id.et_caption);
-        final String caption = editText.getText().toString();
+        final EditText editText = (EditText) dialog.findViewById(R.id.et_caption);
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(mContext, android.R.layout.simple_spinner_item, ITEMS);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        final Spinner spinner_select = (Spinner) dialog.findViewById(R.id.spinner_select);
+        spinner_select.setAdapter(adapter);
+
+        spinner_select.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position == 0) {
+                    et_search.setText("");
+                    et_search.setVisibility(View.GONE);
+                    spinner_select.setSelection(0);
+                } else {
+                    et_search.setVisibility(View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
 
         try {
             Bitmap imageBitmap = MediaStore.Images.Media.getBitmap(mContext.getContentResolver(), selectedMediaUri);
@@ -672,31 +703,19 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
             @Override
             public void onClick(View v) {
                 dialog.dismiss();
-//                mLoggedIn = false;
-//                mDigitsSession = null;
-                AppData.saveBoolean(getApplicationContext(), CensusConstants.isLoggedIn, false);
-                AppData.clearPreferences(getApplicationContext());
-                finishAffinity();
-                Intent intent = new Intent(getApplicationContext(), LoginSignupActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
-                overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
-            }
-        });
-
-        btn_no.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-            }
-        });
-
-        btn_yes.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
                 try {
-                    SendImageMultiPart(caption);
+                    String caption = editText.getText().toString();
+                    String zipcode = et_search.getText().toString();
+                    if (spinner_select.getSelectedItemPosition() > 0 && zipcode.equals("")) {
+                        et_search.setError("please enter zipcode");
+                    } else if (caption.equals("")) {
+                        editText.setError("message cannot be empty !");
+                    } else {
+                        et_input.setError(null);
+                        et_search.setError(null);
+                        SendImageMultiPart(caption, zipcode);
+                        dialog.dismiss();
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -743,7 +762,6 @@ public class TelegramBroadcast extends AppCompatActivity implements View.OnClick
        /* Cursor cursor = getContentResolver().query(contentUri, proj, null, null, null);*/
         Cursor cursor = ctx.getContentResolver().query(contentUri, null, null, null, null);
         if (cursor.moveToFirst()) {
-
             int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
             res = cursor.getString(column_index);
         } else {

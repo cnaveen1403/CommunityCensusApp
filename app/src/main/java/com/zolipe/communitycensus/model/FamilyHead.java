@@ -66,6 +66,8 @@ public class FamilyHead implements Parcelable {
         familyHeadId = in.readString();
         isFamilyHead = in.readString();
         isSynced = in.readString();
+        state_id = in.readString();
+        city_id = in.readString();
     }
 
     public static final Creator<FamilyHead> CREATOR = new Creator<FamilyHead>() {
@@ -247,5 +249,7 @@ public class FamilyHead implements Parcelable {
         dest.writeString(familyHeadId);
         dest.writeString(isFamilyHead);
         dest.writeString(isSynced);
+        dest.writeString(state_id);
+        dest.writeString(city_id);
     }
 }

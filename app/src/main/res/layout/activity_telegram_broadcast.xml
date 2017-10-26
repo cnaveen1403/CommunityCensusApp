@@ -4,9 +4,177 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.zolipe.communitycensus.SupervisorsList">
+    android:background="@drawable/bg"
+    tools:context="com.zolipe.communitycensus.activity.TelegramBroadcast">
+    <android.support.design.widget.AppBarLayout
+        android:id="@+id/app_bar_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fitsSystemWindows="true"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
-    <FrameLayout
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:title="@string/title_activity_broadcast"
+            app:layout_collapseMode="pin"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+
+    </android.support.design.widget.AppBarLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_below="@+id/app_bar_layout">
+        <Button
+            android:id="@+id/btn_gallery"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:background="@android:drawable/dialog_holo_light_frame"
+            android:text="Send Image From Gallery"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/buttonBackground"
+            android:theme="@style/SEND"
+            style="@style/Widget.AppCompat.Button.Borderless"/>
+        <Button
+            android:id="@+id/btn_camera"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:background="@android:drawable/dialog_holo_light_frame"
+            android:text="Send Image From Camera"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/buttonBackground"
+            android:theme="@style/SEND"
+            style="@style/Widget.AppCompat.Button.Borderless"/>
+
+        <Button
+            android:id="@+id/btn_audio"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:background="@android:drawable/dialog_holo_light_frame"
+            android:text="Send Audio"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/buttonBackground"
+            android:theme="@style/SEND"
+            style="@style/Widget.AppCompat.Button.Borderless"/>
+        <LinearLayout
+            android:id="@+id/ll_message_area"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:background="@drawable/blue_border_white_bg"
+            android:paddingBottom="2dp"
+            android:orientation="vertical">
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:background="@android:drawable/dialog_holo_light_frame"
+                android:backgroundTint="@color/colorPrimary"
+                android:text="Text Message"/>
+            <CheckBox
+                android:id="@+id/chk_is_group_message"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
+                android:text="Is this a Group Message ?"/>
+
+            <LinearLayout
+                android:id="@+id/ll_select_members"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:layout_marginTop="16dp"
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Select Members : "/>
+                <Spinner
+                    android:id="@+id/spinner_select"
+                    android:layout_width="fill_parent"
+                    android:layout_height="48dp"
+                    android:spinnerMode="dialog"
+                    android:prompt="@string/select_members"
+                    style="@android:style/Widget.Spinner">
+                </Spinner>
+            </LinearLayout>
+            <EditText
+                android:id="@+id/et_search_for_tele"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_search"
+                android:drawableLeft="@android:drawable/ic_menu_search"
+                android:drawablePadding="4dp"
+                android:hint="Zipcode"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLength="6"
+                android:textSize="14sp"
+                android:padding="8dp"
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone"/>
+            <LinearLayout
+                android:id="@+id/form"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentLeft="true"
+                android:orientation="horizontal"
+                android:padding="4dp">
+                <EditText
+                    android:id="@+id/et_input"
+                    android:layout_width="0dp"
+                    android:layout_marginLeft="4dp"
+                    android:layout_height="wrap_content"
+                    android:hint="your message here..."
+                    android:layout_alignParentBottom="true"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignTop="@+id/button1"
+                    android:layout_toLeftOf="@+id/sendMessageButton"
+                    android:layout_weight="0.72"
+                    android:ems="10"
+                    android:maxHeight="80dp" />
+
+                <ImageButton
+                    android:id="@+id/sendMessageButton"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginRight="4dp"
+                    android:padding="4dp"
+                    android:layout_gravity="center"
+                    android:layout_alignParentBottom="true"
+                    android:layout_alignParentRight="true"
+                    android:background="@drawable/ic_send"
+                    android:backgroundTint="@color/colorPrimary"/>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+   <!-- <FrameLayout
         android:id="@+id/fl_background"
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
@@ -28,52 +196,6 @@
                 <include layout="@layout/media_attach_menu" />
             </io.codetail.widget.RevealFrameLayout>
         </FrameLayout>
-    </FrameLayout>
-    <LinearLayout
-        android:id="@+id/ll_message_area"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:background="#91f1f1f1"
-        android:paddingBottom="2dp"
-        android:orientation="vertical">
-        <CheckBox
-            android:id="@+id/chk_is_group_message"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="8dp"
-            android:text="Is this a Group Message ?"/>
-        <LinearLayout
-            android:id="@+id/form"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentLeft="true"
-            android:background="#91f1f1f1"
-            android:orientation="horizontal">
-            <EditText
-                android:id="@+id/et_input"
-                android:layout_width="252dp"
-                android:layout_height="wrap_content"
-                android:hint="your message here..."
-                android:layout_alignParentBottom="true"
-                android:layout_alignParentLeft="true"
-                android:layout_alignTop="@+id/button1"
-                android:layout_toLeftOf="@+id/sendMessageButton"
-                android:layout_weight="0.72"
-                android:ems="10"
-                android:maxHeight="80dp" />
+    </FrameLayout>-->
 
-            <ImageButton
-                android:id="@+id/sendMessageButton"
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:layout_marginRight="8dp"
-                android:layout_gravity="center"
-                android:layout_alignParentBottom="true"
-                android:layout_alignParentRight="true"
-                android:background="@drawable/ic_send" />
-        </LinearLayout>
-    </LinearLayout>
 </RelativeLayout>

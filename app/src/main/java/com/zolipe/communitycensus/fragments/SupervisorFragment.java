@@ -242,7 +242,6 @@ public class SupervisorFragment extends Fragment implements SupervisorListItemCl
 
         final DbAsyncTask dbATask = new DbAsyncTask(mContext, false, null);
         DbParameter dbParams = new DbParameter();
-        Log.e(TAG, "showSupervisors: inside the offline fetch");
         ArrayList<Object> parms = new ArrayList<Object>();
         dbParams.addParamterList(parms);
 

@@ -682,7 +682,7 @@ public class AddMember extends AppCompatActivity {
         // TODO Auto-generated method stub
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == 0 && resultCode == 0) {
+        if (requestCode == CHECK_PERMISSION && resultCode == 0) {
             openFileChooserDialog();
         }
 
@@ -828,7 +828,7 @@ public class AddMember extends AppCompatActivity {
     private static boolean isValidDateOfBirth(String dob) {
         Date todaysDate = new Date();
         String formattedDate = new SimpleDateFormat("yyyy-MM-dd").format(todaysDate);
-        return ((formattedDate.compareTo(dob) < 0) ? false : true);
+        return (formattedDate.compareTo(dob) >= 0);
     }
 
     private Boolean isFamilyHead() {

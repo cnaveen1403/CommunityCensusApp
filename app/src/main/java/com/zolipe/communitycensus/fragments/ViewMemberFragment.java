@@ -5,6 +5,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +21,7 @@ import com.zolipe.communitycensus.model.FamilyHead;
 
 public class ViewMemberFragment extends Fragment {
 
+    private final String TAG = "ViewMemberFragment";
     View rootView;
     ImageView iv_profileImage;
     TextView tv_first_name, tv_last_name, tv_gender, tv_dob, tv_phone_num, tv_aadhar,

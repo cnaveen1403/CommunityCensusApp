@@ -58,8 +58,8 @@ import com.zolipe.communitycensus.util.ConnectToServer;
 import com.zolipe.communitycensus.util.SelectDocument;
 
 import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -84,7 +84,6 @@ public class EditProfile extends AppCompatActivity {
     private static final int REQUEST_CAMERA = 1001;
     private static final int REQUEST_GALLERY = 1002;
     private PermissionsChecker checker;
-    private final CharSequence[] items = {"Take Photo", "From Gallery"};
     Uri mCapturedImageURI;
     String fileName = "temp.jpg";
     private static String mImageType = "jpeg";
@@ -208,7 +207,7 @@ public class EditProfile extends AppCompatActivity {
             public void onClick(View v) {
                 if (isValidated()) {
                     if (CommonUtils.isActiveNetwork(mContext))
-                        updateProfile();
+                        new UpdateProfileAsyncTask().execute();
                     else
                         Toast.makeText(mContext, "Check your internet connectivity to update profile", Toast.LENGTH_LONG).show();
                 }
@@ -248,9 +247,7 @@ public class EditProfile extends AppCompatActivity {
         spinner2.setSelection(Integer.parseInt(AppData.getString(mContext, CensusConstants.state_id)));
         et_first_name.setText(AppData.getString(mContext, CensusConstants.firstName));
         et_last_name.setText(AppData.getString(mContext, CensusConstants.lastName));
-//        Log.e(TAG, "setProfileData: Date >>>>>>>>> " + AppData.getString(mContext, CensusConstants.dob));
         et_dob.setText(AppData.getString(mContext, CensusConstants.dob));
-//        et_phone_no.setText(AppData.getString(mContext, CensusConstants.phoneNumber));
         et_aadhaar.setText(AppData.getString(mContext, CensusConstants.aadhaar));
         et_email.setText(AppData.getString(mContext, CensusConstants.emailId));
         et_address.setText(AppData.getString(mContext, CensusConstants.address));
@@ -692,11 +689,7 @@ public class EditProfile extends AppCompatActivity {
         return pos;
     }
 
-    private void updateProfile() {
-        new UpdateProfile().execute();
-    }
-
-    private class UpdateProfile extends AsyncTask<Void, Void, String> {
+    private class UpdateProfileAsyncTask extends AsyncTask<Void, Void, String> {
         final Dialog progressDialog = new Dialog(mContext, R.style.progress_dialog);
 
         @Override
@@ -729,9 +722,8 @@ public class EditProfile extends AppCompatActivity {
             parms.add(new BasicNameValuePair(CensusConstants.state_id, mStateId));
             parms.add(new BasicNameValuePair(CensusConstants.country, AppData.getString(mContext, CensusConstants.country)));
             parms.add(new BasicNameValuePair(CensusConstants.zipcode, getZipcode()));
-            parms.add(new BasicNameValuePair(CensusConstants.userAvatar, mEncodedData));
             parms.add(new BasicNameValuePair(CensusConstants.imageType, mImageType));
-            parms.add(new BasicNameValuePair(CensusConstants.userRole, user_role));
+            parms.add(new BasicNameValuePair("updated_by", AppData.getString(mContext, CensusConstants.rolebased_user_id)));
 
             /*Log.d(LOG_TAG, "params firstName >>> " + getFname());
             Log.d(LOG_TAG, "params lastName >>> " + getLname());
@@ -743,12 +735,6 @@ public class EditProfile extends AppCompatActivity {
             Log.d(LOG_TAG, "params zipcode >>> " + getZipcode());
             Log.d(LOG_TAG, "params mEncodedData >>> " + mEncodedData);
             Log.d(LOG_TAG, "params image type >>> " + mImageType);*/
-
-            /*String paramString = URLEncodedUtils.format(parms, "utf-8");
-            String url = CensusConstants.BASE_URL + CensusConstants.UPDATE_SUPERVISOR_INFO_URL;
-            url += "?";
-            url += paramString;
-            Log.e(LOG_TAG, "url sending is >>> " + url);*/
 
             String URL = "";
 
@@ -764,6 +750,14 @@ public class EditProfile extends AppCompatActivity {
                 parms.add(new BasicNameValuePair("member_id", AppData.getString(mContext, CensusConstants.rolebased_user_id)));
             }
 
+            parms.add(new BasicNameValuePair(CensusConstants.userAvatar, mEncodedData));
+
+            /*String paramString = URLEncodedUtils.format(parms, "utf-8");
+            String url = CensusConstants.BASE_URL + URL;
+            url += "?";
+            url += paramString;
+            Log.e(TAG, "url sending is >>> " + url);*/
+
             return new ConnectToServer().getDataFromUrl(URL, parms);
         }
 
@@ -771,7 +765,7 @@ public class EditProfile extends AppCompatActivity {
         @Override
         protected void onPostExecute(String result) {
             try {
-                Log.d(TAG, "result >>> " + result);
+                Log.e(TAG, "result >>> " + result);
                 progressDialog.dismiss();
                 JSONObject jsonObject = new JSONObject(result);
                 String status = jsonObject.getString("status");

@@ -28,6 +28,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
@@ -251,11 +252,11 @@ public class CommonUtils {
             parms.add(new BasicNameValuePair("user_role", AppData.getString(mContext, CensusConstants.userRole)));
             parms.add(new BasicNameValuePair("search_text", search));
 
-            /*String paramString = URLEncodedUtils.format(parms, "utf-8");
+            String paramString = URLEncodedUtils.format(parms, "utf-8");
             String url = CensusConstants.BASE_URL + CensusConstants.FAMILY_HEADS_LIST_URL;
             url += "?";
             url += paramString;
-            Log.e(TAG, "url sending is >>> " + url);*/
+            Log.e(TAG, "url sending is >>> " + url);
             return new ConnectToServer().getDataFromUrl(CensusConstants.BASE_URL + CensusConstants.FAMILY_HEADS_LIST_URL, parms);//HttpUtils.doPost(map, BureauConstants.BASE_URL+BureauConstants.REGISTER_URL);
         }
 
@@ -399,7 +400,7 @@ public class CommonUtils {
         }
     }
 
-    private static String getRelationShipId(Context context, String relation_name) {
+    public static String getRelationShipId(Context context, String relation_name) {
         String relationId = "";
         GDatabaseHelper dbHelper = GDatabaseHelper.getInstance(context);
         String query = "SELECT relation_id FROM RelationsInfo WHERE relation_name = '" + relation_name + "'";
@@ -490,7 +491,6 @@ public class CommonUtils {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            Log.e(TAG, "doInBackground: sresponse for members >>> " + sresponse);
             return sresponse;
         }
 
@@ -503,7 +503,6 @@ public class CommonUtils {
                 String status_code = jsonObject.getString("status_code");
                 //{"status":"success","status_code":"1000","offline_ids":"4","response":"Add offline Members Successful"}
                 if (status.equals("success") && status_code.equals("1000")) {
-                    Log.e(TAG, "onPostExecute: Inside Success uploadOfflineMembersAsyncTask [][][][][][][][[][][][][][][][][][][][ ");
                     String ids = jsonObject.getString("offline_ids");
                     updateOfflineRecords(context, ids, "members");
                 } else {
@@ -587,7 +586,6 @@ public class CommonUtils {
 
         try {
             JSONArray jsonArray = jsonObject.getJSONArray("data");
-            Log.e(TAG, "saveSupervisorsToLocalDB: jsonArray.length() >> " + jsonArray.length());
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject explrObject = jsonArray.getJSONObject(i);
                 ArrayList<Object> parms = new ArrayList<Object>();
@@ -696,7 +694,6 @@ public class CommonUtils {
 
         try {
             JSONArray jsonArray = jsonObject.getJSONArray("city_data");
-            Log.e(TAG, "saveCitiesInfo: jsonArray.length() >> " + jsonArray.length());
 
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject explrObject = jsonArray.getJSONObject(i);
@@ -781,7 +778,6 @@ public class CommonUtils {
 
         try {
             JSONArray jsonArray = jsonObject.getJSONArray("realtionship_data");
-            Log.e(TAG, "saveRelationsInfo: jsonArray.length() >> " + jsonArray.length());
 
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject explrObject = jsonArray.getJSONObject(i);

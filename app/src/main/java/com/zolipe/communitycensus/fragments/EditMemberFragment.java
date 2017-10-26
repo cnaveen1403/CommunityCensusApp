@@ -89,7 +89,7 @@ public class EditMemberFragment extends Fragment {
     static ToggleButton toggleButton_gender;
 
     static Context mContext;
-    Activity mActivity;
+    static Activity mActivity;
 
     static FamilyHead member;
     static String emailPattern = "[a-zA-Z0-9._-]+@[a-z]+\\.+[a-z]+";
@@ -520,7 +520,11 @@ public class EditMemberFragment extends Fragment {
         String formattedDate = array[2] + "-" + array[1] + "-" + array[0];
 
         et_member_dob.setText(formattedDate);
-        et_phone.setText(member.getPhone_number());
+        String phone = member.getPhone_number();
+        if(phone.length() == 12)
+            phone = phone.substring(2);
+
+        et_phone.setText(phone);
         et_aadhaar.setText(member.getAadhaar());
         et_email.setText(member.getEmail());
         et_address.setText(member.getAddress());
@@ -534,14 +538,6 @@ public class EditMemberFragment extends Fragment {
                 .into(ivProfileImage);
 
         String gender = member.getGender();
-
-
-        /*try {
-            et_dob.setText(AppData.getString(mContext, CensusConstants.dob));
-            et_dob.setText(formatDate (AppData.getString(mContext, CensusConstants.dob), "DD-MM-yyyy", "yyyy-MM-DD"));
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }*/
 
         if (gender.equals("male")) {
             toggleButton_gender.setChecked(false);
@@ -558,10 +554,9 @@ public class EditMemberFragment extends Fragment {
         DbParameter dbParams_duty = new DbParameter();
 
         ArrayList<Object> parms = new ArrayList<Object>();
-        Log.e(TAG, "saveToLocalDB: member.getFamilyHeadId() >>> " + member.getFamilyHeadId());
         parms.add(getFname());
         parms.add(getLname());
-        parms.add(getPhoneNumber());
+        parms.add("91" + getPhoneNumber());
         parms.add(getEmail());
         parms.add(getAddress());
         parms.add(mGender);
@@ -584,13 +579,10 @@ public class EditMemberFragment extends Fragment {
 
         DbAction dbAction_duty = new DbAction() {
             @Override
-            public void execPreDbAction() {
-            }
+            public void execPreDbAction() {}
 
             @Override
             public void execPostDbAction() {
-
-
                 final Dialog customDialog = new Dialog(mContext);
                 customDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
                 customDialog.setContentView(R.layout.simple_alert);
@@ -605,6 +597,8 @@ public class EditMemberFragment extends Fragment {
                     @Override
                     public void onClick(View v) {
                         customDialog.dismiss();
+                        mActivity.finish();
+                        mActivity.overridePendingTransition(R.anim.slide_from_left, R.anim.slide_to_right);
                     }
                 });
                 customDialog.show();
@@ -638,28 +632,30 @@ public class EditMemberFragment extends Fragment {
         protected String doInBackground(Void... params) {
             // params comes from the execute() call: params[0] is the url.
             List<NameValuePair> parms = new LinkedList<NameValuePair>();
-
-//            parms.add(new BasicNameValuePair(CensusConstants.member_id, member.getId()));
             parms.add(new BasicNameValuePair(CensusConstants.isFamilyHead, member.getIsFamilyHead()));
-            parms.add(new BasicNameValuePair(CensusConstants.familyHeadId, member.getFamilyHeadId()));
+            parms.add(new BasicNameValuePair(CensusConstants.relationshipId, member.getRelationship()));
             parms.add(new BasicNameValuePair(CensusConstants.firstName, getFname()));
             parms.add(new BasicNameValuePair(CensusConstants.lastName, getLname()));
             parms.add(new BasicNameValuePair(CensusConstants.gender, mGender));
-
             parms.add(new BasicNameValuePair(CensusConstants.dob, getDateOfBirth()));
+            parms.add(new BasicNameValuePair(CensusConstants.phoneNumber, "91" + getPhoneNumber()));
+            parms.add(new BasicNameValuePair(CensusConstants.head_aadhar_number, member.getFamilyHeadId()));
             parms.add(new BasicNameValuePair(CensusConstants.aadhaar, getAadhaar()));
             parms.add(new BasicNameValuePair(CensusConstants.emailId, getEmail()));
             parms.add(new BasicNameValuePair(CensusConstants.address, getAddress()));
+            parms.add(new BasicNameValuePair(CensusConstants.city_id, member.getCity_id()));
+            parms.add(new BasicNameValuePair(CensusConstants.state_id, member.getState_id()));
+            parms.add(new BasicNameValuePair(CensusConstants.country, "india"));
             parms.add(new BasicNameValuePair(CensusConstants.zipcode, getZipcode()));
             parms.add(new BasicNameValuePair(CensusConstants.userAvatar, mEncodedData));
             parms.add(new BasicNameValuePair("image_type", mImageType));
             parms.add(new BasicNameValuePair("updated_by", AppData.getString(mContext, CensusConstants.rolebased_user_id)));
 
-            String paramString = URLEncodedUtils.format(parms, "utf-8");
-            String url = CensusConstants.BASE_URL + CensusConstants.UPDATE_SUPERVISOR_INFO_URL;
+            /*String paramString = URLEncodedUtils.format(parms, "utf-8");
+            String url = CensusConstants.BASE_URL + CensusConstants.UPDATE_MEMBER_URL;
             url += "?";
             url += paramString;
-            Log.e(TAG, "url sending is >>> " + url);
+            Log.e(TAG, "url sending is >>> " + url);*/
 
             String URL = CensusConstants.BASE_URL + CensusConstants.UPDATE_MEMBER_URL;
 
@@ -670,7 +666,6 @@ public class EditMemberFragment extends Fragment {
         @Override
         protected void onPostExecute(String result) {
             try {
-                Log.e(TAG, "result >>> " + result);
                 progressDialog.dismiss();
                 JSONObject jsonObject = new JSONObject(result);
                 String status = jsonObject.getString("status");
@@ -679,7 +674,6 @@ public class EditMemberFragment extends Fragment {
                 String status_code = jsonObject.getString("status_code");
 
                 if (status.equals("success")) {
-
                     if (status.equalsIgnoreCase(CensusConstants.SUCCESS) && status_code.equals("1000")) {
                         saveToLocalDB(false, jsonObject.getString("image_url"), "Member data has been updated successfully");
                     } else if (status.equalsIgnoreCase(CensusConstants.SUCCESS) && status_code.equals("1001")) {

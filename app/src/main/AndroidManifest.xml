@@ -63,10 +63,6 @@
                 android:value="com.zolipe.communitycensus.activity.HomeActivity" />
         </activity>
 
-        <meta-data
-            android:name="io.fabric.ApiKey"
-            android:value="dda698c576d922ace47a93daf38d789444ac71c9" />
-
         <activity
             android:name=".activity.EditProfile"
             android:label="@string/title_activity_edit_profile"
@@ -129,6 +125,7 @@
             android:name=".activity.TelegramBroadcast"
             android:label="@string/title_activity_telegram_broadcast"
             android:parentActivityName=".activity.HomeActivity"
+            android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar"
             android:windowSoftInputMode="stateAlwaysHidden">
             <meta-data
@@ -138,6 +135,7 @@
         <activity
             android:name=".activity.ViewSupervisor"
             android:label="@string/title_activity_supervisor_detail"
+            android:screenOrientation="portrait"
             android:parentActivityName=".activity.HomeActivity"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
@@ -183,6 +181,9 @@
             android:value="false" />
 
         <activity android:name=".activity.ErrorActivity"></activity>
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="dda698c576d922ace47a93daf38d789444ac71c9" />
     </application>
 
 </manifest>

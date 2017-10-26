@@ -20,22 +20,37 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
             android:gravity="center_horizontal"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:background="#FFCCC9C9">
 
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
             <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/iv_header_image"
                 android:layout_width="120dp"
                 android:layout_height="120dp"
-                android:layout_gravity="center_horizontal"
+                android:layout_centerInParent="true"
                 android:layout_marginTop="4dp"
                 android:scaleType="centerCrop"
                 android:src="@drawable/ic_add_photo"
                 app:civ_border_color="@color/colorPrimary"
                 app:civ_border_width="4dp" />
-
+                <TextView
+                    android:id="@+id/tv_view_familyHead"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentBottom="true"
+                    android:layout_margin="16dp"
+                    android:text="View"
+                    android:background="@color/colorPrimary"
+                    android:textColor="@color/white"
+                    android:padding="8dp"
+                    android:tint="@color/colorPrimary"/>
+            </RelativeLayout>
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

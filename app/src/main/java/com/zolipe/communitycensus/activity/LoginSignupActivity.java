@@ -44,6 +44,7 @@ import com.zolipe.communitycensus.util.CommonUtils;
 import com.zolipe.communitycensus.util.ConnectToServer;
 
 import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -324,7 +325,7 @@ public class LoginSignupActivity extends Activity {
                 // Get phone number
                 PhoneNumber phoneNumber = account.getPhoneNumber();
                 String phoneNumberString = phoneNumber.toString();
-                Log.e(TAG, "onSuccess: phoneNumberString >>> " + phoneNumberString);
+//                Log.e(TAG, "onSuccess: phoneNumberString >>> " + phoneNumberString);
                 // Get email
 //                String email = account.getEmail();
 
@@ -435,11 +436,11 @@ public class LoginSignupActivity extends Activity {
             parms.add(new BasicNameValuePair(CensusConstants.userRole, mUserRole));
 
             //Print Full URL
-            /*String paramString = URLEncodedUtils.format(parms, "utf-8");
+            String paramString = URLEncodedUtils.format(parms, "utf-8");
             String url = CensusConstants.BASE_URL + CensusConstants.LOGIN_URL;
             url += "?";
             url += paramString;
-            Log.e(TAG, "url sending is >>> " + url);*/
+            Log.e(TAG, "url sending is >>> " + url);
 
             return new ConnectToServer().getDataFromUrl(CensusConstants.BASE_URL + CensusConstants.LOGIN_URL, parms);
         }

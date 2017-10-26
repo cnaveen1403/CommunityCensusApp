@@ -19,6 +19,8 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -28,11 +30,13 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -315,7 +319,7 @@ public class HomeActivity extends AppCompatActivity
         });
 
         if (getIntent().getExtras() != null && getIntent().getExtras().containsKey("selected_tab")) {
-            String selectedTab= getIntent().getExtras().get("selected_tab").toString();
+            String selectedTab = getIntent().getExtras().get("selected_tab").toString();
             if (selectedTab.equals("supervisor"))
                 mBottomBar.selectTabAtPosition(0, true);
 
@@ -659,10 +663,35 @@ public class HomeActivity extends AppCompatActivity
         dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
         dialog.setContentView(R.layout.bc_email_dialog);
 
+        String[] ITEMS = {"All", "By Zipcode"};
+        final EditText et_search = (EditText) dialog.findViewById(R.id.et_search_for_email);
         final EditText et_subject = (EditText) dialog.findViewById(R.id.et_subject);
         final EditText et_message = (EditText) dialog.findViewById(R.id.et_message);
         final Button btn_cancel = (Button) dialog.findViewById(R.id.btn_cancel);
         final Button btn_send = (Button) dialog.findViewById(R.id.btn_send);
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(mContext, android.R.layout.simple_spinner_item, ITEMS);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        final Spinner spinner_select = (Spinner) dialog.findViewById(R.id.spinner_select);
+        spinner_select.setAdapter(adapter);
+
+        spinner_select.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position == 0) {
+                    et_search.setText("");
+                    et_search.setVisibility(View.GONE);
+                } else {
+                    et_search.setVisibility(View.VISIBLE);
+                    et_search.requestFocus();
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
 
         btn_cancel.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -674,9 +703,12 @@ public class HomeActivity extends AppCompatActivity
         btn_send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                String zipcode = et_search.getText().toString();
                 String subject = et_subject.getText().toString();
                 String message = et_message.getText().toString();
-                if (subject.equals("") || message.equals("")) {
+                if(spinner_select.getSelectedItemPosition() > 0 && et_search.getText().toString().equals("")){
+                    et_search.setError("please enter zipcode");
+                }else if (subject.equals("") || message.equals("")) {
                     if (subject.equals("")) {
                         et_subject.setError("Please enter subject for email");
                     } else if (message.equals("")) {
@@ -684,7 +716,7 @@ public class HomeActivity extends AppCompatActivity
                     }
                 } else {
                     dialog.dismiss();
-                    new sendEmailAsyncTask().execute(subject, message);
+                    new sendEmailAsyncTask().execute(subject, message, zipcode);
                 }
             }
         });
@@ -699,22 +731,60 @@ public class HomeActivity extends AppCompatActivity
     }
 
     private void sendSMSClicked() {
+        String[] ITEMS = {"All", "By Zipcode"};
+
         final Dialog dialog = new Dialog(this, R.style.CustomDialog);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
         dialog.setContentView(R.layout.bc_sms_dialog);
 
         final EditText et_input = (EditText) dialog.findViewById(R.id.et_input);
-        ImageButton ib_send = (ImageButton) dialog.findViewById(R.id.ib_send);
+        Button ib_send = (Button) dialog.findViewById(R.id.ib_send);
+        final EditText et_search = (EditText) dialog.findViewById(R.id.et_search_for_sms);
+        final Button btn_cancel = (Button) dialog.findViewById(R.id.btn_cancel);
+
+        btn_cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(mContext, android.R.layout.simple_spinner_item, ITEMS);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        final Spinner spinner_select = (Spinner) dialog.findViewById(R.id.spinner_select);
+        spinner_select.setAdapter(adapter);
+
+        spinner_select.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position == 0) {
+                    et_search.setText("");
+                    et_search.setVisibility(View.GONE);
+                } else {
+                    et_search.setVisibility(View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
 
         ib_send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (et_input.getText().toString().equals("")) {
                     et_input.setError("message cannot be empty !");
-                } else {
+                } else if(spinner_select.getSelectedItemPosition() > 0 && et_search.getText().toString().equals("")){
+                    et_search.setError("please enter zipcode");
+                }else {
                     et_input.setError(null);
-                    new sendSMSAsyncTask().execute(et_input.getText().toString());
+                    String message = et_input.getText().toString();
+                    String zipcode = et_search.getText().toString();
+
+                    new sendSMSAsyncTask().execute(message, zipcode);
                     dialog.dismiss();
                 }
             }
@@ -722,6 +792,7 @@ public class HomeActivity extends AppCompatActivity
 
         dialog.show();
     }
+
 
     private void logoutClicked() {
         final Dialog dialog = new Dialog(HomeActivity.this, R.style.CustomDialog);
@@ -811,8 +882,10 @@ public class HomeActivity extends AppCompatActivity
         @Override
         protected String doInBackground(String... params) {
             String sms_text = params[0];
+            String zipcode = params[1];
             List<NameValuePair> parms = new LinkedList<NameValuePair>();
             parms.add(new BasicNameValuePair("sms_text", sms_text));
+            parms.add(new BasicNameValuePair("zipcode", zipcode));
             return new ConnectToServer().getDataFromUrl(CensusConstants.BASE_URL + CensusConstants.SEND_SMS_URL, parms);
         }
 
@@ -838,10 +911,12 @@ public class HomeActivity extends AppCompatActivity
         protected String doInBackground(String... params) {
             String subject = params[0];
             String message = params[1];
+            String zipcode = params[2];
 
             List<NameValuePair> parms = new LinkedList<NameValuePair>();
             parms.add(new BasicNameValuePair("subject_line", subject));
             parms.add(new BasicNameValuePair("body_content", message));
+            parms.add(new BasicNameValuePair("zipcode", zipcode));
             return new ConnectToServer().getDataFromUrl(CensusConstants.BASE_URL + CensusConstants.SEND_EMAIL_URL, parms);
         }
 

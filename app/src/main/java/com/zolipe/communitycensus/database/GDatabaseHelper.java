@@ -30,7 +30,6 @@ public class GDatabaseHelper extends SQLiteOpenHelper {
             // db = null;
         }
 
-        Log.e("Community Census : ", "inside GDatabaseHelper " + gDbHelper);
         return gDbHelper;
     }
 
@@ -41,7 +40,7 @@ public class GDatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        DbAsyncTask dbTask = new DbAsyncTask((Activity) this.context, true, null);
+        DbAsyncTask dbTask = new DbAsyncTask(this.context, true, null);
         DbAsyncParameter dbAsyncParam = new DbAsyncParameter(R.string.sql_ddl,
                 DbAsyncTask.QUERY_TYPE_UPDATE, null, null);
         dbAsyncParam.setDatabase(db);
@@ -162,7 +161,7 @@ public class GDatabaseHelper extends SQLiteOpenHelper {
         try {
             for (String ddlStr : ddl) {
                 Object[] parms;
-                parms = (dbParameter != null) ? (Object[]) dbParameter.getObjectArrayParameters(index) : null;
+                parms = (dbParameter != null) ? dbParameter.getObjectArrayParameters(index) : null;
                 if (parms == null) {
                     sqliteDb.execSQL(ddlStr);
                 } else {
@@ -195,7 +194,7 @@ public class GDatabaseHelper extends SQLiteOpenHelper {
             String ddlStr = null;
             for (int index = 0; index < dbParameter.size(); index++) {
                 Object[] parms;
-                parms = (dbParameter != null) ? (Object[]) dbParameter
+                parms = (dbParameter != null) ? dbParameter
                         .getObjectArrayParameters(index) : null;
                 for (int j = 0; j < ddl.length; j++) {
                     ddlStr = ddl[j];
@@ -278,7 +277,7 @@ public class GDatabaseHelper extends SQLiteOpenHelper {
             for (int index = 0; index < dbParameter.size(); index++) {
                 Object[] parms;
                 ddlStr = ddl[0];
-                parms = (dbParameter != null) ? (Object[]) dbParameter.getObjectArrayParameters(index) : null;
+                parms = (dbParameter != null) ? dbParameter.getObjectArrayParameters(index) : null;
                 if (parms == null) {
                     sqliteDb.execSQL(ddlStr);
                 } else {
